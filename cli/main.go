@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
@@ -79,20 +79,67 @@ func lunch(instance Instance) {
 
 }
 
+// todo refactor
+func parseLatestInstance(runAt time.Time, logs []string) Instance {
+	for _, l := range logs {
+		if l == "" {
+			continue
+		}
+
+		if !strings.Contains(l, WolrdLogPrefix) {
+			continue
+		}
+
+		loc, err := time.LoadLocation(location)
+		if err != nil {
+			loc = time.FixedZone(location, 9*60*60)
+		}
+
+		logTime, err := time.ParseInLocation("2006.01.02 15:04:05", l[:19], loc)
+
+		if err != nil {
+			fmt.Println(l)
+			panic(err)
+		}
+
+		if runAt.Before(logTime) {
+			continue
+		}
+
+		return Instance{Time: logTime, ID: l}
+	}
+
+}
 func main() {
 	path := `C:\Users\bootjp\AppData\LocalLow\VRChat\VRChat\`
 	latestLog := ""
 	lock := sync.Mutex{}
 	var history = Instances{}
 
-	files, err := filepath.Glob(`C:\Users\bootjp\AppData\LocalLow\VRChat\VRChat\output_log*.txt`)
+	files, err := ioutil.ReadDir(path)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	sort.Strings(files)
-	length := len(files)
-	latestLog = files[length]
+	sort.Slice(files, func(i, j int) bool {
+		return files[i].ModTime().Before(files[j].ModTime())
+	})
+	var filterd []os.FileInfo
+	for _, v := range files {
+		if strings.Contains(v.Name(), "output_log") {
+			filterd = append(filterd, v)
+		}
+	}
+
+	for _, v := range filterd {
+		fmt.Println(v.Name(), v.ModTime().Format("2006.01.02 15:04:05"))
+	}
+
+	if len(filterd) > 0 {
+		latestLog = filterd[0].Name()
+	} else {
+		log.Fatal("log file not found.")
+	}
 
 	loc, err := time.LoadLocation(location)
 	if err != nil {
@@ -110,6 +157,14 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	content, err := ioutil.ReadFile(latestLog)
+	if err != nil {
+		log.Fatal(err)
+	}
+	lines := strings.Split(string(content), "\r\n")
+	i := parseLatestInstance(startAt, lines)
+	fmt.Println(i)
 	var msg *tail.Line
 	var ok bool
 	for true {
