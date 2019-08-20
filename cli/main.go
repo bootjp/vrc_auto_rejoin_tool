@@ -5,12 +5,13 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
-
-	"github.com/fsnotify/fsnotify"
 
 	"github.com/hpcloud/tail"
 )
@@ -19,6 +20,24 @@ const WolrdLogPrefix = "[VRCFlowManagerVRC] Destination set: wrld_"
 const location = "Asia/Tokyo"
 
 var worldReg = regexp.MustCompile(`(wrld.+?):(\d+)`)
+
+type Instance struct {
+	Time time.Time
+	ID   string
+}
+type Instances []Instance
+
+func (in Instances) Len() int {
+	return len(in)
+}
+
+func (in Instances) Less(i, j int) bool {
+	return in[i].Time.Before(in[j].Time)
+}
+
+func (in Instances) Swap(i, j int) {
+	in[i], in[j] = in[j], in[i]
+}
 
 func moved(runAt time.Time, l string) bool {
 	if l == "" {
@@ -48,97 +67,69 @@ func moved(runAt time.Time, l string) bool {
 	return true
 }
 
-func lunch() {
+func lunch(instance Instance) {
 	cmd := &exec.Cmd{
 		Path:        os.Getenv("COMSPEC"),
 		Stdin:       os.Stdin,
 		Stdout:      os.Stdout,
 		Stderr:      os.Stderr,
-		SysProcAttr: &syscall.SysProcAttr{CmdLine: `/S /C start vrchat://launch?id=wrld_dc124ed6-acec-4d55-9866-54ab66af172d:13345~friends(usr_d97adcdc-718b-4361-9b75-2c97c0a4993d)`},
+		SysProcAttr: &syscall.SysProcAttr{CmdLine: `/S /C start vrchat://launch?id=` + instance.ID},
 	}
 	cmd.Run()
 
 }
+
 func main() {
 	path := `C:\Users\bootjp\AppData\LocalLow\VRChat\VRChat\`
 	latestLog := ""
-	oldLogFile := ""
+	lock := sync.Mutex{}
+	var history = Instances{}
 
-	watcher, err := fsnotify.NewWatcher()
+	files, err := filepath.Glob(`C:\Users\bootjp\AppData\LocalLow\VRChat\VRChat\output_log*.txt`)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer watcher.Close()
 
-	done := make(chan bool)
-	go func() {
-		for {
-			select {
-			case event, ok := <-watcher.Events:
-				if !ok {
-					return
-				}
+	sort.Strings(files)
+	length := len(files)
+	latestLog = files[length]
 
-				if event.Op&fsnotify.Create == fsnotify.Create {
-					log.Println("modified file:", event.Name)
+	loc, err := time.LoadLocation(location)
+	if err != nil {
+		loc = time.FixedZone(location, 9*60*60)
+	}
 
-					loc, err := time.LoadLocation(location)
-					if err != nil {
-						loc = time.FixedZone(location, 9*60*60)
-					}
+	startAt := time.Now().In(loc)
+	fmt.Println("RUNNING START AT", startAt.Format("2006.01.02 15:04:05"))
 
-					startAt := time.Now().In(loc)
-					fmt.Println(startAt.Format("2006.01.02 15:04:05"))
+	t, err := tail.TailFile(path+latestLog, tail.Config{
+		Follow:    true,
+		MustExist: true,
+	})
 
-					if !strings.Contains(event.Name, "output_log") {
-						return
-					}
-					if oldLogFile != "" && oldLogFile != event.Name {
-						oldLogFile = event.Name
-					}
-					t, err := tail.TailFile(event.Name, tail.Config{
-						Follow:    true,
-						MustExist: true,
-					})
-
-					if err != nil {
-						log.Fatal(err)
-					}
-
-					var msg *tail.Line
-					var ok bool
-					for true {
-						msg, ok = <-t.Lines
-						if !ok {
-							continue
-						}
-
-						text := msg.Text
-						if moved(startAt, text) {
-							fmt.Println("instance move detect!!!")
-							fmt.Println(text)
-							if latestLog != text {
-								latestLog = text
-								lunch()
-							}
-
-						}
-					}
-				}
-			case err, ok := <-watcher.Errors:
-				if !ok {
-					return
-				}
-				log.Println("error:", err)
-			}
+	if err != nil {
+		log.Fatal(err)
+	}
+	var msg *tail.Line
+	var ok bool
+	for true {
+		msg, ok = <-t.Lines
+		if !ok {
+			continue
 		}
-	}()
 
-	err = watcher.Add(path)
-	if err != nil {
-		log.Println("watcher")
-		log.Fatal(err)
+		text := msg.Text
+		// todo 起動時インスタンスの取得
+		if moved(startAt, text) {
+			lock.Lock()
+			fmt.Println("instance move detect!!!")
+			fmt.Println(text)
+			if latestLog != text {
+				latestLog = text
+				history = append(history, Instance{Time: time.Time{}, ID: text})
+				lunch(history[0])
+			}
+			lock.Unlock()
+		}
 	}
-	<-done
-
 }
