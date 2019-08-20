@@ -81,6 +81,7 @@ func lunch(instance Instance) {
 
 // todo refactor
 func parseLatestInstance(runAt time.Time, logs []string) Instance {
+	latestI := Instance{}
 	for _, l := range logs {
 		if l == "" {
 			continue
@@ -105,10 +106,9 @@ func parseLatestInstance(runAt time.Time, logs []string) Instance {
 		if runAt.Before(logTime) {
 			continue
 		}
-
-		return Instance{Time: logTime, ID: l}
+		latestI = Instance{Time: logTime, ID: l}
 	}
-
+	return latestI
 }
 func main() {
 	path := `C:\Users\bootjp\AppData\LocalLow\VRChat\VRChat\`
