@@ -18,8 +18,9 @@ import (
 
 const WolrdLogPrefix = "[VRCFlowManagerVRC] Destination set: wrld_"
 const location = "Asia/Tokyo"
+const timeFormat = "2006.01.02 15:04:05"
 
-var worldReg = regexp.MustCompile(`(wrld.+?):(\d+)`)
+var worldReg = regexp.MustCompile(`wrld_.+`)
 
 type Instance struct {
 	Time time.Time
@@ -53,7 +54,7 @@ func moved(runAt time.Time, l string) bool {
 		loc = time.FixedZone(location, 9*60*60)
 	}
 
-	logTime, err := time.ParseInLocation("2006.01.02 15:04:05", l[:19], loc)
+	logTime, err := time.ParseInLocation(timeFormat, l[:19], loc)
 
 	if err != nil {
 		fmt.Println(l)
@@ -75,40 +76,43 @@ func lunch(instance Instance) {
 		Stderr:      os.Stderr,
 		SysProcAttr: &syscall.SysProcAttr{CmdLine: `/S /C start vrchat://launch?id=` + instance.ID},
 	}
-	cmd.Run()
 
+	if err := cmd.Run(); err != nil {
+		log.Fatal(err)
+	}
 }
 
-// todo refactor
 func parseLatestInstance(logs string) Instance {
 	latestI := Instance{}
 
-	for _, l := range strings.Split(logs, "\n") {
-		if l == "" {
+	for _, line := range strings.Split(logs, "\n") {
+		if line == "" {
 			continue
 		}
 
-		if !strings.Contains(l, WolrdLogPrefix) {
+		if !strings.Contains(line, WolrdLogPrefix) {
 			continue
 		}
 
-		loc, err := time.LoadLocation(location)
+		logTime, err := time.ParseInLocation(timeFormat, line[:19], loc)
 		if err != nil {
-			loc = time.FixedZone(location, 9*60*60)
+			fmt.Println(line)
+			log.Fatal(err)
 		}
 
-		logTime, err := time.ParseInLocation("2006.01.02 15:04:05", l[:19], loc)
-
-		if err != nil {
-			fmt.Println(l)
-			panic(err)
-		}
-
-		latestI = Instance{Time: logTime, ID: l}
+		latestI = Instance{Time: logTime, ID: line}
 	}
 	return latestI
 }
+
+var loc *time.Location
+
 func main() {
+	loc, err := time.LoadLocation(location)
+	if err != nil {
+		loc = time.FixedZone(location, 9*60*60)
+	}
+
 	path := `C:\Users\bootjp\AppData\LocalLow\VRChat\VRChat\`
 	latestLog := ""
 	lock := sync.Mutex{}
@@ -130,7 +134,7 @@ func main() {
 	}
 
 	for _, v := range filterd {
-		fmt.Println(v.Name(), v.ModTime().Format("2006.01.02 15:04:05"))
+		fmt.Println(v.Name(), v.ModTime().Format(timeFormat))
 	}
 
 	if len(filterd) > 0 {
@@ -139,13 +143,8 @@ func main() {
 		log.Fatal("log file not found.")
 	}
 
-	loc, err := time.LoadLocation(location)
-	if err != nil {
-		loc = time.FixedZone(location, 9*60*60)
-	}
-
 	startAt := time.Now().In(loc)
-	fmt.Println("RUNNING START AT", startAt.Format("2006.01.02 15:04:05"))
+	fmt.Println("RUNNING START AT", startAt.Format(timeFormat))
 
 	t, err := tail.TailFile(path+latestLog, tail.Config{
 		Follow:    true,
