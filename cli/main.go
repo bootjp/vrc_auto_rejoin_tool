@@ -82,7 +82,7 @@ func lunch(instance Instance) {
 	}
 }
 
-func parseLatestInstance(logs string) Instance {
+func parseLatestInstance(logs string, loc *time.Location) Instance {
 	latestI := Instance{}
 
 	for _, line := range strings.Split(logs, "\n") {
@@ -104,8 +104,6 @@ func parseLatestInstance(logs string) Instance {
 	}
 	return latestI
 }
-
-var loc *time.Location
 
 func main() {
 	loc, err := time.LoadLocation(location)
@@ -160,7 +158,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	i := parseLatestInstance(string(content))
+	i := parseLatestInstance(string(content), loc)
 	fmt.Println(i)
 	var msg *tail.Line
 	var ok bool

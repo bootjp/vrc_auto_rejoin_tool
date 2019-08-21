@@ -30,7 +30,7 @@ func TestParseLatestInstance(t *testing.T) {
 		t.Error(err)
 	}
 	// time.Now().l
-	res := parseLatestInstance(string(content))
+	res := parseLatestInstance(string(content), loc)
 	if eq == res {
 		t.Logf("%v", eq)
 		t.Logf("%v", res)
