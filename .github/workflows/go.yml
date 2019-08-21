@@ -18,7 +18,8 @@ jobs:
       uses: actions/checkout@v1
 
     - name: Get dependencies
-      env: GO111MODULE=on
+      env: 
+        GO111MODULE: on
       run: |
         go get -v -t -d ./...
         if [ -f Gopkg.toml ]; then
