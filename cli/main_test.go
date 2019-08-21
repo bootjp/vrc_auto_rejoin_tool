@@ -29,8 +29,11 @@ func TestParseLatestInstance(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	// time.Now().l
-	res := parseLatestInstance(string(content), loc)
+
+	res, err := parseLatestInstance(string(content), loc)
+	if err != nil {
+		t.Log(err)
+	}
 	if eq == res {
 		t.Logf("%v", eq)
 		t.Logf("%v", res)

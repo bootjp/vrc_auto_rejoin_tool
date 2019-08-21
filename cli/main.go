@@ -40,13 +40,13 @@ func (in Instances) Swap(i, j int) {
 	in[i], in[j] = in[j], in[i]
 }
 
-func moved(runAt time.Time, l string) bool {
+func moved(runAt time.Time, l string) (bool, error) {
 	if l == "" {
-		return false
+		return false, nil
 	}
 
 	if !strings.Contains(l, WolrdLogPrefix) {
-		return false
+		return false, nil
 	}
 
 	loc, err := time.LoadLocation(location)
@@ -57,15 +57,15 @@ func moved(runAt time.Time, l string) bool {
 	logTime, err := time.ParseInLocation(timeFormat, l[:19], loc)
 
 	if err != nil {
-		fmt.Println(l)
-		panic(err)
+		return false, err
 	}
 
 	if logTime.Before(runAt) {
-		return false
+		return false, nil
 	}
 
-	return true
+	return true, nil
+
 }
 
 func lunch(instance Instance) error {
@@ -129,18 +129,14 @@ func main() {
 	}
 
 	for _, v := range filtered {
-		fmt.Println(v.Name(), v.ModTime().Format(timeFormat))
+		fmt.Println(v.Name())
 	}
 
-	if len(filtered) > 0 {
-		latestLog = filtered[0].Name()
-	} else {
-		log.Fatal("log file not found.")
-	}
-
+	latestLog = filtered[len(filtered)-1].Name()
 	startAt := time.Now().In(loc)
 	fmt.Println("RUNNING START AT", startAt.Format(timeFormat))
 
+	fmt.Println(path + latestLog)
 	t, err := tail.TailFile(path+latestLog, tail.Config{
 		Follow:    true,
 		MustExist: true,
@@ -150,7 +146,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	content, err := ioutil.ReadFile(latestLog)
+	content, err := ioutil.ReadFile(path + latestLog)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -160,16 +156,20 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println(i)
-	var msg *tail.Line
-	var ok bool
+
 	for true {
-		msg, ok = <-t.Lines
+		msg, ok := <-t.Lines
 		if !ok {
 			continue
 		}
 
 		text := msg.Text
-		if moved(startAt, text) {
+		fmt.Println(msg)
+		mov, err := moved(startAt, text)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if mov {
 			lock.Lock()
 			fmt.Println("instance move detect!!!")
 			fmt.Println(text)
