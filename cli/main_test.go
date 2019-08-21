@@ -24,7 +24,7 @@ func TestParseLatestInstance(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	fmt.Println(d)
+
 	content, err := ioutil.ReadFile(d + "/test_log.txt")
 	if err != nil {
 		t.Error(err)
@@ -38,5 +38,26 @@ func TestParseLatestInstance(t *testing.T) {
 		t.Logf("%v", eq)
 		t.Logf("%v", res)
 		t.FailNow()
+	}
+}
+
+func TestNewInstanceByLog(t *testing.T) {
+	loc, err := time.LoadLocation(location)
+	if err != nil {
+		loc = time.FixedZone(location, 9*60*60)
+	}
+
+	log := `2019.08.18 21:02:38 Log        -  [VRCFlowManagerVRC] Destination set: wrld_cc124ed6-acec-4d55-9866-54ab66af172d`
+	ti, err := time.ParseInLocation(timeFormat, "2019.08.18 21:02:38", loc)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	expect := Instance{ID: "wrld_cc124ed6-acec-4d55-9866-54ab66af172d", Time: ti}
+	got := NewInstanceByLog(log, loc)
+	if expect != got {
+		fmt.Printf("%v\n", expect)
+		fmt.Printf("%v\n", got)
+		t.Fatal()
 	}
 }

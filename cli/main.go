@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -40,32 +41,24 @@ func (in Instances) Swap(i, j int) {
 	in[i], in[j] = in[j], in[i]
 }
 
-func moved(runAt time.Time, l string) (bool, error) {
+var NotMoved = errors.New("this log not moved")
+
+func moved(runAt time.Time, l string, loc *time.Location) (Instance, error) {
 	if l == "" {
-		return false, nil
+		return Instance{}, NotMoved
 	}
 
 	if !strings.Contains(l, WolrdLogPrefix) {
-		return false, nil
+		return Instance{}, NotMoved
 	}
 
-	loc, err := time.LoadLocation(location)
-	if err != nil {
-		loc = time.FixedZone(location, 9*60*60)
+	i := NewInstanceByLog(l, loc)
+
+	if i.Time.Before(runAt) {
+		return Instance{}, NotMoved
 	}
 
-	logTime, err := time.ParseInLocation(timeFormat, l[:19], loc)
-
-	if err != nil {
-		return false, err
-	}
-
-	if logTime.Before(runAt) {
-		return false, nil
-	}
-
-	return true, nil
-
+	return i, nil
 }
 
 func lunch(instance Instance) error {
@@ -92,16 +85,31 @@ func parseLatestInstance(logs string, loc *time.Location) (Instance, error) {
 			continue
 		}
 
-		logTime, err := time.ParseInLocation(timeFormat, line[:19], loc)
-		if err != nil {
-			return Instance{}, err
-		}
-
-		i = Instance{Time: logTime, ID: line}
+		i = NewInstanceByLog(line, loc)
 	}
 	return i, nil
 }
 
+//func parseLogTime(log string, loc *time.Location) time.Time, err {
+//logTime, err := time.ParseInLocation(timeFormat, log[:19], loc)
+//if err != nil {
+//return err
+//}
+//return logTime
+//}
+
+func NewInstanceByLog(log string, loc *time.Location) Instance {
+	r := regexp.MustCompile(`wrld_.+`)
+
+	logTime, err := time.ParseInLocation(timeFormat, log[:19], loc)
+	if err != nil {
+		return Instance{}
+	}
+	group := r.FindSubmatch([]byte(log))
+	return Instance{ID: string(group[0]), Time: logTime}
+}
+
+// todo 今の実装ではlucherを起動したあとにログのtailをしないので治す
 func main() {
 	loc, err := time.LoadLocation(location)
 	if err != nil {
@@ -109,7 +117,8 @@ func main() {
 	}
 
 	path := `C:\Users\bootjp\AppData\LocalLow\VRChat\VRChat\`
-	latestLog := ""
+	fmt.Println(path)
+	latestInstance := Instance{}
 	lock := sync.Mutex{}
 	var history = Instances{}
 
@@ -132,7 +141,7 @@ func main() {
 		fmt.Println(v.Name())
 	}
 
-	latestLog = filtered[len(filtered)-1].Name()
+	latestLog := filtered[len(filtered)-1].Name()
 	startAt := time.Now().In(loc)
 	fmt.Println("RUNNING START AT", startAt.Format(timeFormat))
 
@@ -164,24 +173,23 @@ func main() {
 		}
 
 		text := msg.Text
-		fmt.Println(msg)
-		mov, err := moved(startAt, text)
+		nInstance, err := moved(startAt, text, loc)
+		if err == NotMoved {
+			continue
+		}
 		if err != nil {
 			log.Fatal(err)
 		}
-		if mov {
-			lock.Lock()
-			fmt.Println("instance move detect!!!")
-			fmt.Println(text)
-			if latestLog != text {
-				latestLog = text
-				history = append(history, Instance{Time: time.Time{}, ID: text})
-				err := lunch(history[0])
-				if err != nil {
-					log.Fatal(err)
-				}
+
+		lock.Lock()
+		fmt.Println("instance move detect!!!")
+		if latestInstance != nInstance {
+			latestInstance = nInstance
+			history = append(history, nInstance)
+			if err := lunch(history[0]); err != nil {
+				log.Fatal(err)
 			}
-			lock.Unlock()
 		}
+		lock.Unlock()
 	}
 }
