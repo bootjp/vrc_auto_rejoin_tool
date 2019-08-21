@@ -74,7 +74,7 @@ func lunch(instance Instance) {
 		Stdin:       os.Stdin,
 		Stdout:      os.Stdout,
 		Stderr:      os.Stderr,
-		SysProcAttr: &syscall.SysProcAttr{CmdLine: `/S /C start vrchat://launch?id=` + instance.ID},
+		SysProcAttr: &syscall.SysProcAttr{CmdLine: `/S /C start vrchat://launch?id=` + instance.ID}, // when run non windows env please comment out this line.
 	}
 
 	if err := cmd.Run(); err != nil {
