@@ -1,0 +1,27 @@
+2019.08.18 21:02:38 Log        -  [VRCFlowManagerVRC] Destination set: wrld_dc124ed6-acec-4d55-9866-54ab66af172d
+
+
+2019.08.18 21:02:38 Log        -  [RoomManager] Clearing Room Metadata
+
+
+2019.08.18 21:02:38 Log        -  [RoomManager] Successfully left room
+
+
+2019.08.18 21:02:38 Log        -  [VRCFlowManagerVRC] Beginning room transition
+
+
+2019.08.18 21:02:38 Log        -  [VRCFlowManagerVRC] Resetting statistics
+
+
+2019.08.18 21:02:38 Log        -  [VRCFlowManagerVRC] Serialization History Length defaulting to 25
+
+
+2019.08.18 21:02:38 Log        -  [VRCFlowManagerVRC] Transitioning to room
+
+
+2019.08.18 21:02:38 Log        -  [VRCFlowManagerVRC] Resetting game flow because "Destination world set": [SkipLogin]
+
+
+2019.08.18 21:02:38 Log        -  [RoomManager] Clearing Room Metadata
+2019.08.18 21:02:38 Log        -  [VRCFlowManagerVRC] Destination set: wrld_cc124ed6-acec-4d55-9866-54ab66af172d
+2019.08.18 21:02:38 Log        -  [VRCFlowManagerVRC] waiting for UI Manager

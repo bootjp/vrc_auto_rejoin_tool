@@ -80,9 +80,10 @@ func lunch(instance Instance) {
 }
 
 // todo refactor
-func parseLatestInstance(runAt time.Time, logs []string) Instance {
+func parseLatestInstance(logs string) Instance {
 	latestI := Instance{}
-	for _, l := range logs {
+
+	for _, l := range strings.Split(logs, "\n") {
 		if l == "" {
 			continue
 		}
@@ -103,9 +104,6 @@ func parseLatestInstance(runAt time.Time, logs []string) Instance {
 			panic(err)
 		}
 
-		if runAt.Before(logTime) {
-			continue
-		}
 		latestI = Instance{Time: logTime, ID: l}
 	}
 	return latestI
@@ -162,8 +160,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	lines := strings.Split(string(content), "\r\n")
-	i := parseLatestInstance(startAt, lines)
+
+	i := parseLatestInstance(string(content))
 	fmt.Println(i)
 	var msg *tail.Line
 	var ok bool
