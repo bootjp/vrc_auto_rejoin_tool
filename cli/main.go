@@ -68,7 +68,7 @@ func moved(runAt time.Time, l string) bool {
 	return true
 }
 
-func lunch(instance Instance) {
+func lunch(instance Instance) error {
 	cmd := &exec.Cmd{
 		Path:        os.Getenv("COMSPEC"),
 		Stdin:       os.Stdin,
@@ -77,13 +77,11 @@ func lunch(instance Instance) {
 		SysProcAttr: &syscall.SysProcAttr{CmdLine: `/S /C start vrchat://launch?id=` + instance.ID}, // when run non windows env please comment out this line.
 	}
 
-	if err := cmd.Run(); err != nil {
-		log.Fatal(err)
-	}
+	return cmd.Run()
 }
 
-func parseLatestInstance(logs string, loc *time.Location) Instance {
-	latestI := Instance{}
+func parseLatestInstance(logs string, loc *time.Location) (Instance, error) {
+	i := Instance{}
 
 	for _, line := range strings.Split(logs, "\n") {
 		if line == "" {
@@ -96,13 +94,12 @@ func parseLatestInstance(logs string, loc *time.Location) Instance {
 
 		logTime, err := time.ParseInLocation(timeFormat, line[:19], loc)
 		if err != nil {
-			fmt.Println(line)
-			log.Fatal(err)
+			return Instance{}, err
 		}
 
-		latestI = Instance{Time: logTime, ID: line}
+		i = Instance{Time: logTime, ID: line}
 	}
-	return latestI
+	return i, nil
 }
 
 func main() {
@@ -124,19 +121,19 @@ func main() {
 	sort.Slice(files, func(i, j int) bool {
 		return files[i].ModTime().Before(files[j].ModTime())
 	})
-	var filterd []os.FileInfo
+	var filtered []os.FileInfo
 	for _, v := range files {
 		if strings.Contains(v.Name(), "output_log") {
-			filterd = append(filterd, v)
+			filtered = append(filtered, v)
 		}
 	}
 
-	for _, v := range filterd {
+	for _, v := range filtered {
 		fmt.Println(v.Name(), v.ModTime().Format(timeFormat))
 	}
 
-	if len(filterd) > 0 {
-		latestLog = filterd[0].Name()
+	if len(filtered) > 0 {
+		latestLog = filtered[0].Name()
 	} else {
 		log.Fatal("log file not found.")
 	}
@@ -158,7 +155,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	i := parseLatestInstance(string(content), loc)
+	i, err := parseLatestInstance(string(content), loc)
+	if err != nil {
+		log.Fatal(err)
+	}
 	fmt.Println(i)
 	var msg *tail.Line
 	var ok bool
@@ -169,7 +169,6 @@ func main() {
 		}
 
 		text := msg.Text
-		// todo 起動時インスタンスの取得
 		if moved(startAt, text) {
 			lock.Lock()
 			fmt.Println("instance move detect!!!")
@@ -177,7 +176,10 @@ func main() {
 			if latestLog != text {
 				latestLog = text
 				history = append(history, Instance{Time: time.Time{}, ID: text})
-				lunch(history[0])
+				err := lunch(history[0])
+				if err != nil {
+					log.Fatal(err)
+				}
 			}
 			lock.Unlock()
 		}
