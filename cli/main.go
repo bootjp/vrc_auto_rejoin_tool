@@ -17,7 +17,7 @@ import (
 	"github.com/hpcloud/tail"
 )
 
-const WolrdLogPrefix = "[VRCFlowManagerVRC] Destination set: wrld_"
+const WorldLogPrefix = "[VRCFlowManagerVRC] Destination set: wrld_"
 const Location = "Asia/Tokyo"
 const TimeFormat = "2006.01.02 15:04:05"
 
@@ -46,7 +46,7 @@ func moved(runAt time.Time, l string, loc *time.Location) (Instance, error) {
 		return Instance{}, NotMoved
 	}
 
-	if !strings.Contains(l, WolrdLogPrefix) {
+	if !strings.Contains(l, WorldLogPrefix) {
 		return Instance{}, NotMoved
 	}
 
@@ -84,7 +84,7 @@ func parseLatestInstance(logs string, loc *time.Location) (Instance, error) {
 			continue
 		}
 
-		if !strings.Contains(line, WolrdLogPrefix) {
+		if !strings.Contains(line, WorldLogPrefix) {
 			continue
 		}
 
