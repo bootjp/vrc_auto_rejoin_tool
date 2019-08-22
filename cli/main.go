@@ -95,23 +95,23 @@ func parseLatestInstance(logs string, loc *time.Location) (Instance, error) {
 	return i, nil
 }
 
-//func parseLogTime(log string, loc *time.Location) time.Time, err {
-//logTime, err := time.ParseInLocation(timeFormat, log[:19], loc)
-//if err != nil {
-//return err
-//}
-//return logTime
-//}
-
-func NewInstanceByLog(log string, loc *time.Location) Instance {
-	r := regexp.MustCompile(`wrld_.+`)
-
+func parseLogTime(log string, loc *time.Location) (time.Time, error) {
 	logTime, err := time.ParseInLocation(timeFormat, log[:19], loc)
 	if err != nil {
-		return Instance{}
+		return logTime, err
 	}
-	group := r.FindSubmatch([]byte(log))
-	return Instance{ID: string(group[0]), Time: logTime}
+	return logTime, nil
+}
+
+func NewInstanceByLog(logs string, loc *time.Location) Instance {
+	r := regexp.MustCompile(`wrld_.+`)
+
+	lt, err := parseLogTime(logs, loc)
+	if err != nil {
+		log.Fatal(err)
+	}
+	group := r.FindSubmatch([]byte(logs))
+	return Instance{ID: string(group[0]), Time: lt}
 }
 
 // todo 今の実装ではlucherを起動したあとにログのtailをしないので治す
@@ -132,6 +132,7 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// todo reverse
 	sort.Slice(files, func(i, j int) bool {
 		return files[i].ModTime().Before(files[j].ModTime())
 	})
@@ -146,7 +147,8 @@ func main() {
 		fmt.Println(v.Name())
 	}
 
-	latestLog := filtered[len(filtered)-1].Name()
+	max := len(filtered) - 1
+	latestLog := filtered[max].Name()
 	startAt := time.Now().In(loc)
 	fmt.Println("RUNNING START AT", startAt.Format(timeFormat))
 
