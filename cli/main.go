@@ -20,8 +20,8 @@ import (
 )
 
 const WolrdLogPrefix = "[VRCFlowManagerVRC] Destination set: wrld_"
-const location = "Asia/Tokyo"
-const timeFormat = "2006.01.02 15:04:05"
+const Location = "Asia/Tokyo"
+const TimeFormat = "2006.01.02 15:04:05"
 
 type Instance struct {
 	Time time.Time
@@ -96,7 +96,7 @@ func parseLatestInstance(logs string, loc *time.Location) (Instance, error) {
 }
 
 func parseLogTime(log string, loc *time.Location) (time.Time, error) {
-	logTime, err := time.ParseInLocation(timeFormat, log[:19], loc)
+	logTime, err := time.ParseInLocation(TimeFormat, log[:19], loc)
 	if err != nil {
 		return logTime, err
 	}
@@ -116,9 +116,9 @@ func NewInstanceByLog(logs string, loc *time.Location) Instance {
 
 // todo 今の実装ではlucherを起動したあとにログのtailをしないので治す
 func main() {
-	loc, err := time.LoadLocation(location)
+	loc, err := time.LoadLocation(Location)
 	if err != nil {
-		loc = time.FixedZone(location, 9*60*60)
+		loc = time.FixedZone(Location, 9*60*60)
 	}
 
 	path := `C:\Users\bootjp\AppData\LocalLow\VRChat\VRChat\`
@@ -150,7 +150,7 @@ func main() {
 	max := len(filtered) - 1
 	latestLog := filtered[max].Name()
 	startAt := time.Now().In(loc)
-	fmt.Println("RUNNING START AT", startAt.Format(timeFormat))
+	fmt.Println("RUNNING START AT", startAt.Format(TimeFormat))
 
 	fmt.Println(path + latestLog)
 	t, err := tail.TailFile(path+latestLog, tail.Config{

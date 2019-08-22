@@ -9,9 +9,9 @@ import (
 )
 
 func TestParseLatestInstance(t *testing.T) {
-	loc, err := time.LoadLocation(location)
+	loc, err := time.LoadLocation(Location)
 	if err != nil {
-		loc = time.FixedZone(location, 9*60*60)
+		loc = time.FixedZone(Location, 9*60*60)
 	}
 
 	lt, err := time.ParseInLocation("2006.01.02 15:04:05", "2019.08.18 21:02:38", loc)
@@ -42,13 +42,13 @@ func TestParseLatestInstance(t *testing.T) {
 }
 
 func TestNewInstanceByLog(t *testing.T) {
-	loc, err := time.LoadLocation(location)
+	loc, err := time.LoadLocation(Location)
 	if err != nil {
-		loc = time.FixedZone(location, 9*60*60)
+		loc = time.FixedZone(Location, 9*60*60)
 	}
 
 	log := `2019.08.18 21:02:38 Log        -  [VRCFlowManagerVRC] Destination set: wrld_cc124ed6-acec-4d55-9866-54ab66af172d`
-	ti, err := time.ParseInLocation(timeFormat, "2019.08.18 21:02:38", loc)
+	ti, err := time.ParseInLocation(TimeFormat, "2019.08.18 21:02:38", loc)
 
 	if err != nil {
 		t.Fatal(err)
