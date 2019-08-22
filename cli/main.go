@@ -50,8 +50,10 @@ func moved(runAt time.Time, l string, loc *time.Location) (Instance, error) {
 		return Instance{}, NotMoved
 	}
 
-	i := NewInstanceByLog(l, loc)
-
+	i, err := NewInstanceByLog(l, loc)
+	if err != nil {
+		return i, NotMoved
+	}
 	if i.Time.Before(runAt) {
 		return Instance{}, NotMoved
 	}
@@ -68,7 +70,7 @@ func lunch(instance Instance) error {
 		SysProcAttr: &syscall.SysProcAttr{
 			CmdLine: `/S /C start vrchat://launch?id=` + instance.ID,
 			// Foreground: true,
-		}, // when run non windows env please comment out this line.
+		}, // when run non windows environment please comment out this line. because this line is window only system call.
 	}
 
 	out, err := cmd.Output()
@@ -77,7 +79,7 @@ func lunch(instance Instance) error {
 }
 
 func parseLatestInstance(logs string, loc *time.Location) (Instance, error) {
-	i := Instance{}
+	latestInstance := Instance{}
 
 	for _, line := range strings.Split(logs, "\n") {
 		if line == "" {
@@ -88,9 +90,13 @@ func parseLatestInstance(logs string, loc *time.Location) (Instance, error) {
 			continue
 		}
 
-		i = NewInstanceByLog(line, loc)
+		instance, err := NewInstanceByLog(line, loc)
+		if err != nil {
+			return instance, err
+		}
+		latestInstance = instance
 	}
-	return i, nil
+	return latestInstance, nil
 }
 
 func parseLogTime(log string, loc *time.Location) (time.Time, error) {
@@ -101,7 +107,7 @@ func parseLogTime(log string, loc *time.Location) (time.Time, error) {
 	return logTime, nil
 }
 
-func NewInstanceByLog(logs string, loc *time.Location) Instance {
+func NewInstanceByLog(logs string, loc *time.Location) (Instance, error) {
 	r := regexp.MustCompile(`wrld_.+`)
 
 	lt, err := parseLogTime(logs, loc)
@@ -109,7 +115,11 @@ func NewInstanceByLog(logs string, loc *time.Location) Instance {
 		log.Fatal(err)
 	}
 	group := r.FindSubmatch([]byte(logs))
-	return Instance{ID: string(group[0]), Time: lt}
+	if len(group) > 0 {
+		return Instance{ID: string(group[0]), Time: lt}, nil
+	}
+
+	return Instance{}, errors.New("world log not found")
 }
 
 // todo 今の実装ではlucherを起動したあとにログのtailをしないので治す

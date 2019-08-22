@@ -54,10 +54,75 @@ func TestNewInstanceByLog(t *testing.T) {
 		t.Fatal(err)
 	}
 	expect := Instance{ID: "wrld_cc124ed6-acec-4d55-9866-54ab66af172d", Time: ti}
-	got := NewInstanceByLog(log, loc)
+	got, err := NewInstanceByLog(log, loc)
+	if err != nil {
+		t.Error(err)
+	}
 	if expect != got {
 		fmt.Printf("%v\n", expect)
 		fmt.Printf("%v\n", got)
 		t.Fatal()
 	}
+}
+
+func TestMove(t *testing.T) {
+	loc, err := time.LoadLocation(Location)
+	if err != nil {
+		loc = time.FixedZone(Location, 9*60*60)
+	}
+
+	freeze := time.Date(2018, 1, 1, 0, 0, 0, 0, loc)
+
+	ti, err := time.ParseInLocation(TimeFormat, "2019.08.18 21:02:38", loc)
+	expect := Instance{ID: "wrld_cc124ed6-acec-4d55-9866-54ab66af172d", Time: ti}
+
+	t.Run("success case", func(t *testing.T) {
+		log := `2019.08.18 21:02:38 Log        -  [VRCFlowManagerVRC] Destination set: wrld_cc124ed6-acec-4d55-9866-54ab66af172d`
+		if err != nil {
+			t.Error(err)
+		}
+		got, err := moved(freeze, log, loc)
+		if err != nil {
+			t.Error(err)
+		}
+
+		if expect != got {
+			fmt.Printf("%v\n", expect)
+			fmt.Printf("%v\n", got)
+			t.FailNow()
+		}
+	})
+
+	t.Run("log not found case", func(t *testing.T) {
+		log := `2019.08.18 21:02:38 Log `
+		if err != nil {
+			t.Error(err)
+		}
+		_, err := moved(freeze, log, loc)
+		if err != NotMoved {
+			t.FailNow()
+		}
+	})
+
+	t.Run("log has nonce", func(t *testing.T) {
+
+		ti, err := time.ParseInLocation(TimeFormat, "2019.08.18 21:48:39", loc)
+		expect := Instance{ID: "wrld_58260f57-0076-41d3-a617-c0d0bc8f3d6f:43710~private(usr_d97adcdc-718b-4361-9b75-2c97c0a4993d)~nonce(86CB2A7F4E4AC916CD5A1313F656863C1E80BD2ED63738EA789E2B4C25B48F39)", Time: ti}
+
+		log := `2019.08.18 21:48:39 Log        -  [VRCFlowManagerVRC] Destination set: wrld_58260f57-0076-41d3-a617-c0d0bc8f3d6f:43710~private(usr_d97adcdc-718b-4361-9b75-2c97c0a4993d)~nonce(86CB2A7F4E4AC916CD5A1313F656863C1E80BD2ED63738EA789E2B4C25B48F39)`
+
+		if err != nil {
+			t.Error(err)
+		}
+		got, err := moved(freeze, log, loc)
+		if err != nil {
+			t.Error(err)
+		}
+
+		if expect != got {
+			fmt.Printf("%v\n", expect)
+			fmt.Printf("%v\n", got)
+			t.FailNow()
+		}
+	})
 }
