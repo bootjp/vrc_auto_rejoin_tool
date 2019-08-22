@@ -1,3 +1,5 @@
+// +build darwin
+
 package main
 
 import (
@@ -20,8 +22,6 @@ import (
 const WolrdLogPrefix = "[VRCFlowManagerVRC] Destination set: wrld_"
 const location = "Asia/Tokyo"
 const timeFormat = "2006.01.02 15:04:05"
-
-var worldReg = regexp.MustCompile(`wrld_.+`)
 
 type Instance struct {
 	Time time.Time
@@ -63,14 +63,19 @@ func moved(runAt time.Time, l string, loc *time.Location) (Instance, error) {
 
 func lunch(instance Instance) error {
 	cmd := &exec.Cmd{
-		Path:        os.Getenv("COMSPEC"),
-		Stdin:       os.Stdin,
-		Stdout:      os.Stdout,
-		Stderr:      os.Stderr,
-		SysProcAttr: &syscall.SysProcAttr{CmdLine: `/S /C start vrchat://launch?id=` + instance.ID}, // when run non windows env please comment out this line.
+		Path:   os.Getenv("COMSPEC"),
+		Stdin:  os.Stdin,
+		Stdout: os.Stdout,
+		Stderr: os.Stderr,
+		SysProcAttr: &syscall.SysProcAttr{
+			CmdLine: `/S /C start vrchat://launch?id=` + instance.ID,
+			// Foreground: true,
+		}, // when run non windows env please comment out this line.
 	}
 
-	return cmd.Run()
+	out, err := cmd.Output()
+	fmt.Println(out)
+	return err
 }
 
 func parseLatestInstance(logs string, loc *time.Location) (Instance, error) {
