@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/hpcloud/tail"
@@ -66,10 +67,10 @@ func lunch(instance Instance) error {
 		Stdin:  os.Stdin,
 		Stdout: os.Stdout,
 		Stderr: os.Stderr,
-		// SysProcAttr: &syscall.SysProcAttr{
-		// 	CmdLine: `/S /C start vrchat://launch?id=` + instance.ID,
-		// 	// Foreground: true,
-		// }, // when run non windows environment please comment out this line. because this line is window only system call.
+		SysProcAttr: &syscall.SysProcAttr{
+			CmdLine: `/S /C start vrchat://launch?id=` + instance.ID,
+			// Foreground: true,
+		}, // when run non windows environment please comment out this line. because this line is window only system call.
 	}
 
 	out, err := cmd.Output()
