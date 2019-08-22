@@ -1,4 +1,6 @@
-# VRChat auto rejoin tool
+# VRChat auto rejoin tool 
+
+*THIS PROJECT NOW IS IN DEVELOPMENT SO UNSTABLE.*
 
 ## what is this?
 
