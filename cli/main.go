@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
+	"runtime"
 	"sort"
 	"strings"
 	"sync"
@@ -20,6 +21,7 @@ import (
 const WorldLogPrefix = "[VRCFlowManagerVRC] Destination set: wrld_"
 const Location = "Asia/Tokyo"
 const TimeFormat = "2006.01.02 15:04:05"
+const vrcRelativeLogPath = `\AppData\LocalLow\VRChat\VRChat\`
 
 type Instance struct {
 	Time time.Time
@@ -119,7 +121,17 @@ func NewInstanceByLog(logs string, loc *time.Location) (Instance, error) {
 	return Instance{}, errors.New("world log not found")
 }
 
-// todo 今の実装ではlucherを起動したあとにログのtailをしないので治す
+func UserHomeDir() string {
+	if runtime.GOOS == "windows" {
+		home := os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
+		if home == "" {
+			home = os.Getenv("USERPROFILE")
+		}
+		return home
+	}
+	return os.Getenv("HOME")
+}
+
 func main() {
 	debug := os.Getenv("DEBUG") == "true"
 	loc, err := time.LoadLocation(Location)
@@ -127,9 +139,12 @@ func main() {
 		loc = time.FixedZone(Location, 9*60*60)
 	}
 
-	//path := `C:\Users\bootjp\AppData\LocalLow\VRChat\VRChat\`
-	path := `/Volumes/HomeNas/`
-	fmt.Println(path)
+	home := UserHomeDir()
+	if home == "" {
+		log.Fatal("home dir not detect.")
+	}
+
+	path := home + vrcRelativeLogPath
 	latestInstance := Instance{}
 	lock := sync.Mutex{}
 	var history = Instances{}
@@ -139,7 +154,6 @@ func main() {
 		log.Println(err)
 	}
 
-	// todo reverse
 	sort.Slice(files, func(i, j int) bool {
 		return files[i].ModTime().After(files[j].ModTime())
 	})
