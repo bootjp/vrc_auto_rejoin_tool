@@ -36,11 +36,15 @@ func TestParseLatestInstance(t *testing.T) {
 			t.Log(err)
 		}
 		if !reflect.DeepEqual(eq, res) {
-			t.Logf("%v", eq.Time)
-			t.Logf("%v", res.Time)
+			if !reflect.DeepEqual(eq.Time, res.Time) {
+				t.Logf("%v", eq.Time)
+				t.Logf("%v", res.Time)
+			}
 
-			t.Logf("%v", eq.ID)
-			t.Logf("%v", res.ID)
+			if !reflect.DeepEqual(eq.ID, res.ID) {
+				t.Logf("%v", eq.ID)
+				t.Logf("%v", res.ID)
+			}
 			t.FailNow()
 		}
 	})
@@ -72,10 +76,15 @@ func TestParseLatestInstance(t *testing.T) {
 		}
 
 		if !reflect.DeepEqual(eq, res) {
-			t.Logf("%v", eq.Time)
-			t.Logf("%v", res.Time)
-			t.Logf("%v", eq.ID)
-			t.Logf("%v", res.ID)
+			if !reflect.DeepEqual(eq.Time, res.Time) {
+				t.Logf("%v", eq.Time)
+				t.Logf("%v", res.Time)
+			}
+
+			if !reflect.DeepEqual(eq.ID, res.ID) {
+				t.Logf("%v", eq.ID)
+				t.Logf("%v", res.ID)
+			}
 			t.FailNow()
 		}
 		//t.
