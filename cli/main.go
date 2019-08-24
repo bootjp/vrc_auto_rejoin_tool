@@ -126,7 +126,7 @@ var debug bool
 
 func setupDebugMode(home string) {
 	debug = os.Getenv("DEBUG") == "true"
-	debug = strings.Contains(home, "bootjp")
+	debug = debug || strings.Contains(home, "bootjp")
 }
 
 func main() {
