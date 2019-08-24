@@ -28,19 +28,6 @@ type Instance struct {
 	Time time.Time
 	ID   string
 }
-type Instances []Instance
-
-func (in Instances) Len() int {
-	return len(in)
-}
-
-func (in Instances) Less(i, j int) bool {
-	return in[i].Time.Before(in[j].Time)
-}
-
-func (in Instances) Swap(i, j int) {
-	in[i], in[j] = in[j], in[i]
-}
 
 var NotMoved = errors.New("this log not moved")
 
@@ -118,7 +105,6 @@ func NewInstanceByLog(logs string, loc *time.Location) (Instance, error) {
 	}
 	group := r.FindSubmatch([]byte(logs))
 	if len(group) > 0 {
-
 		return Instance{ID: string(bytes.Trim(group[0], "\x00")), Time: lt}, nil
 	}
 
@@ -136,22 +122,27 @@ func UserHomeDir() string {
 	return os.Getenv("HOME")
 }
 
+var debug bool
+
+func setupDebugMode(home string) {
+	debug = os.Getenv("DEBUG") == "true"
+	debug = strings.Contains(home, "bootjp")
+}
+
 func main() {
-	debug := os.Getenv("DEBUG") == "true"
+	home := UserHomeDir()
+	if home == "" {
+		log.Fatal("home dir not detect.")
+	}
+	setupDebugMode(home)
 	loc, err := time.LoadLocation(Location)
 	if err != nil {
 		loc = time.FixedZone(Location, 9*60*60)
 	}
 
-	home := UserHomeDir()
-	if home == "" {
-		log.Fatal("home dir not detect.")
-	}
-
 	path := home + vrcRelativeLogPath
 	latestInstance := Instance{}
 	lock := sync.Mutex{}
-	var history = Instances{}
 
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
@@ -185,6 +176,8 @@ func main() {
 	t, err := tail.TailFile(path+latestLog, tail.Config{
 		Follow:    true,
 		MustExist: true,
+		ReOpen:    true,
+		Poll:      true,
 	})
 
 	if err != nil {
@@ -200,8 +193,8 @@ func main() {
 	if err != nil {
 		log.Println(err)
 	}
+	latestInstance = i
 	fmt.Println(i)
-
 	for true {
 		msg, ok := <-t.Lines
 		if !ok {
@@ -213,6 +206,9 @@ func main() {
 		if err == NotMoved {
 			continue
 		}
+		if debug {
+			fmt.Println(text)
+		}
 		if err != nil {
 			log.Println(err)
 		}
@@ -220,11 +216,13 @@ func main() {
 		lock.Lock()
 		fmt.Println("instance move detect!!!")
 		if latestInstance != nInstance {
-			latestInstance = nInstance
-			history = append(history, nInstance)
-			if err := lunch(history[0]); err != nil {
+			if debug {
+				fmt.Println("latestInstance", latestInstance)
+			}
+			if err := lunch(latestInstance); err != nil {
 				log.Println(err)
 			}
+			latestInstance = nInstance
 		}
 		lock.Unlock()
 	}
