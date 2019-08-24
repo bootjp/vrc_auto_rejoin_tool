@@ -72,8 +72,7 @@ func lunch(instance Instance) error {
 		}, // when run non windows environment please comment out this line. because this line is window only system call.
 	}
 
-	out, err := cmd.Output()
-	fmt.Println(out)
+	_, err := cmd.Output()
 	return err
 }
 
@@ -107,7 +106,7 @@ func parseLogTime(log string, loc *time.Location) (time.Time, error) {
 }
 
 func NewInstanceByLog(logs string, loc *time.Location) (Instance, error) {
-	r := regexp.MustCompile(`wrld_.+`)
+	r := regexp.MustCompile(`wrld_.+$`)
 
 	lt, err := parseLogTime(logs, loc)
 	if err != nil {
