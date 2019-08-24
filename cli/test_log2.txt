@@ -1,0 +1,12 @@
+2019.08.24 13:30:14 Log        -  [RoomManager] Clearing Room Metadata
+
+
+2019.08.24 13:30:14 Log        -  [VRCFlowManagerVRC] Destination set: wrld_7344b9f5-06e1-4e30-bede-fde72d2e5455:37969~private(usr_d97adcdc-718b-4361-9b75-2c97c0a4993d)~canRequestInvite~nonce(3A7A1F9FFE3F87C45D978535DADD3CEFB007D9249366A1BCED70A96FD4740D3C)
+
+
+2019.08.24 13:30:14 Log        -  [RoomManager] Clearing Room Metadata
+
+
+2019.08.24 13:30:14 Log        -  [VRCFlowManagerVRC] Destination set: wrld_7344b9f5-06e1-4e30-bede-fde72d2e5455:37969~private(usr_d97adcdc-718b-4361-9b75-2c97c0a4993d)~canRequestInvite~nonce(3A7A1F9FFE3F87C45D978535DADD3CEFB007D9249366A1BCED70A96FD4740D3C)
+
+

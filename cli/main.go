@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -72,8 +73,7 @@ func lunch(instance Instance) error {
 		}, // when run non windows environment please comment out this line. because this line is window only system call.
 	}
 
-	out, err := cmd.Output()
-	fmt.Println(out)
+	_, err := cmd.Output()
 	return err
 }
 
@@ -83,6 +83,9 @@ func parseLatestInstance(logs string, loc *time.Location) (Instance, error) {
 	for _, line := range strings.Split(logs, "\n") {
 		if line == "" {
 			continue
+		}
+		if len(line) > 0 && line[len(line)-1] == '\r' {
+			line = line[:len(line)-1]
 		}
 
 		if !strings.Contains(line, WorldLogPrefix) {
@@ -107,7 +110,7 @@ func parseLogTime(log string, loc *time.Location) (time.Time, error) {
 }
 
 func NewInstanceByLog(logs string, loc *time.Location) (Instance, error) {
-	r := regexp.MustCompile(`wrld_.+`)
+	r := regexp.MustCompile(`wrld_.+$`)
 
 	lt, err := parseLogTime(logs, loc)
 	if err != nil {
@@ -115,7 +118,8 @@ func NewInstanceByLog(logs string, loc *time.Location) (Instance, error) {
 	}
 	group := r.FindSubmatch([]byte(logs))
 	if len(group) > 0 {
-		return Instance{ID: string(group[0]), Time: lt}, nil
+
+		return Instance{ID: string(bytes.Trim(group[0], "\x00")), Time: lt}, nil
 	}
 
 	return Instance{}, errors.New("world log not found")
