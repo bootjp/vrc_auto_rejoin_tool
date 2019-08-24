@@ -42,6 +42,8 @@ func TestParseLatestInstance(t *testing.T) {
 			}
 
 			if eq.ID != res.ID {
+				fmt.Printf("%x ", eq.ID)
+				fmt.Printf("%x ", res.ID)
 				t.Logf("%s", eq.ID)
 				t.Logf("%s", res.ID)
 			}
@@ -82,6 +84,9 @@ func TestParseLatestInstance(t *testing.T) {
 			}
 
 			if eq.ID != res.ID {
+				fmt.Printf("%x ", eq.ID)
+				fmt.Printf("%x ", res.ID)
+
 				t.Logf("%s", eq.ID)
 				t.Logf("%s", res.ID)
 			}
