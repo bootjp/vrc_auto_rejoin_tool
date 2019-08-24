@@ -80,7 +80,7 @@ func lunch(instance Instance) error {
 func parseLatestInstance(logs string, loc *time.Location) (Instance, error) {
 	latestInstance := Instance{}
 
-	for _, line := range strings.Split(logs, "\n") {
+	for _, line := range strings.Split(logs, "\n\r") {
 		if line == "" {
 			continue
 		}
