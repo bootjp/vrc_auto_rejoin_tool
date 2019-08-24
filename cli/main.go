@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -114,7 +115,8 @@ func NewInstanceByLog(logs string, loc *time.Location) (Instance, error) {
 	}
 	group := r.FindSubmatch([]byte(logs))
 	if len(group) > 0 {
-		return Instance{ID: string(group[0]), Time: lt}, nil
+
+		return Instance{ID: string(bytes.Trim(group[0], "\x00")), Time: lt}, nil
 	}
 
 	return Instance{}, errors.New("world log not found")
