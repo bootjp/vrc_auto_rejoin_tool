@@ -42,8 +42,8 @@ func TestParseLatestInstance(t *testing.T) {
 			}
 
 			if eq.ID != res.ID {
-				t.Logf("%v", eq.ID)
-				t.Logf("%v", res.ID)
+				t.Logf("%s", eq.ID)
+				t.Logf("%s", res.ID)
 			}
 			t.FailNow()
 		}
@@ -82,8 +82,8 @@ func TestParseLatestInstance(t *testing.T) {
 			}
 
 			if eq.ID != res.ID {
-				t.Logf("%v", eq.ID)
-				t.Logf("%v", res.ID)
+				t.Logf("%s", eq.ID)
+				t.Logf("%s", res.ID)
 			}
 			t.FailNow()
 		}
