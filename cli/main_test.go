@@ -41,7 +41,7 @@ func TestParseLatestInstance(t *testing.T) {
 				t.Logf("%v", res.Time)
 			}
 
-			if !reflect.DeepEqual(eq.ID, res.ID) {
+			if eq.ID != res.ID {
 				t.Logf("%v", eq.ID)
 				t.Logf("%v", res.ID)
 			}
@@ -81,7 +81,7 @@ func TestParseLatestInstance(t *testing.T) {
 				t.Logf("%v", res.Time)
 			}
 
-			if !reflect.DeepEqual(eq.ID, res.ID) {
+			if eq.ID != res.ID {
 				t.Logf("%v", eq.ID)
 				t.Logf("%v", res.ID)
 			}
