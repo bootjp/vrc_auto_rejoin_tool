@@ -63,13 +63,10 @@ func moved(runAt time.Time, l string, loc *time.Location) (Instance, error) {
 
 func lunch(instance Instance) error {
 	cmd := &exec.Cmd{
-		Path:   os.Getenv("COMSPEC"),
-		Stdin:  os.Stdin,
-		Stdout: os.Stdout,
-		Stderr: os.Stderr,
+		Path:  os.Getenv("COMSPEC"),
+		Stdin: os.Stdin,
 		SysProcAttr: &syscall.SysProcAttr{
 			CmdLine: `/S /C start vrchat://launch?id=` + instance.ID,
-			// Foreground: true,
 		}, // when run non windows environment please comment out this line. because this line is window only system call.
 	}
 
@@ -112,7 +109,7 @@ func NewInstanceByLog(logs string, loc *time.Location) (Instance, error) {
 
 	lt, err := parseLogTime(logs, loc)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 	group := r.FindSubmatch([]byte(logs))
 	if len(group) > 0 {
@@ -124,12 +121,14 @@ func NewInstanceByLog(logs string, loc *time.Location) (Instance, error) {
 
 // todo 今の実装ではlucherを起動したあとにログのtailをしないので治す
 func main() {
+	debug := os.Getenv("DEBUG") == "true"
 	loc, err := time.LoadLocation(Location)
 	if err != nil {
 		loc = time.FixedZone(Location, 9*60*60)
 	}
 
-	path := `C:\Users\bootjp\AppData\LocalLow\VRChat\VRChat\`
+	//path := `C:\Users\bootjp\AppData\LocalLow\VRChat\VRChat\`
+	path := `/Volumes/HomeNas/`
 	fmt.Println(path)
 	latestInstance := Instance{}
 	lock := sync.Mutex{}
@@ -137,12 +136,12 @@ func main() {
 
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 
 	// todo reverse
 	sort.Slice(files, func(i, j int) bool {
-		return files[i].ModTime().Before(files[j].ModTime())
+		return files[i].ModTime().After(files[j].ModTime())
 	})
 	var filtered []os.FileInfo
 	for _, v := range files {
@@ -151,12 +150,16 @@ func main() {
 		}
 	}
 
-	for _, v := range filtered {
-		fmt.Println(v.Name())
+	if debug {
+		for _, v := range filtered {
+			fmt.Println(v.Name(), v.ModTime().Format(TimeFormat))
+		}
+	}
+	latestLog := ""
+	if len(filtered) > 0 {
+		latestLog = filtered[0].Name()
 	}
 
-	max := len(filtered) - 1
-	latestLog := filtered[max].Name()
 	startAt := time.Now().In(loc)
 	fmt.Println("RUNNING START AT", startAt.Format(TimeFormat))
 
@@ -167,17 +170,17 @@ func main() {
 	})
 
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 
 	content, err := ioutil.ReadFile(path + latestLog)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 
 	i, err := parseLatestInstance(string(content), loc)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 	fmt.Println(i)
 
@@ -193,7 +196,7 @@ func main() {
 			continue
 		}
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
 		}
 
 		lock.Lock()
@@ -202,7 +205,7 @@ func main() {
 			latestInstance = nInstance
 			history = append(history, nInstance)
 			if err := lunch(history[0]); err != nil {
-				log.Fatal(err)
+				log.Println(err)
 			}
 		}
 		lock.Unlock()
