@@ -35,8 +35,11 @@ func TestParseLatestInstance(t *testing.T) {
 			t.Log(err)
 		}
 		if eq != res {
-			t.Logf("%v", eq)
-			t.Logf("%v", res)
+			t.Logf("%v", eq.Time)
+			t.Logf("%v", res.Time)
+
+			t.Logf("%v", eq.ID)
+			t.Logf("%v", res.ID)
 			t.FailNow()
 		}
 	})
@@ -66,12 +69,12 @@ func TestParseLatestInstance(t *testing.T) {
 		if err != nil {
 			t.Log(err)
 		}
-		t.Logf("%v", eq)
-		t.Logf("%v", res)
 
 		if eq != res {
-			t.Logf("%v", eq)
-			t.Logf("%v", res)
+			t.Logf("%v", eq.Time)
+			t.Logf("%v", res.Time)
+			t.Logf("%v", eq.ID)
+			t.Logf("%v", res.ID)
 			t.FailNow()
 		}
 	})
