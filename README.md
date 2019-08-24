@@ -11,7 +11,7 @@ VRChat may be returned to the home world due to connection problems, and automat
 
 This tool will prevent you from sleeping alone in VRChat and being returned to the home world alone.
 
-VR睡眠して朝起きると一人を防ぎたくて作りました．
+VR睡眠して朝起きるとホームに一人でいることを防ぎたくて作りました．
 
 ## how to use （使い方）
 事前にVRChatを立ち上げておく必要があります。  
