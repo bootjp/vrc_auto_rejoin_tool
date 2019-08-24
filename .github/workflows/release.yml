@@ -25,12 +25,7 @@ jobs:
           GOPATH: /home/runner/work/
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          export CREATE_EVENT_REF_TYPE=$(jq --raw-output .ref_type "$GITHUB_EVENT_PATH")
           export TAGNAME=$(jq --raw-output .ref "$GITHUB_EVENT_PATH")
-          echo "========================================================="
-          echo "DEBUG:" $TAGNAME $CREATE_EVENT_REF_TYPE
-          echo "========================================================="
-          if [ "$CREATE_EVENT_REF_TYPE" != "tag" ]; then echo "ref_type is not a tag: ${CREATE_EVENT_REF_TYPE}" && exit 78; fi
           GOOS=windows GOARCH=amd64 go build  -o dist/vrc_auto_rejoin_tool_x64.exe ./cli/main.go
           zip -r dist/vrc_auto_rejoin_tool.zip
           go get -u github.com/tcnksm/ghr
