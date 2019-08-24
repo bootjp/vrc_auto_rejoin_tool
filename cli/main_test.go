@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -34,7 +35,7 @@ func TestParseLatestInstance(t *testing.T) {
 		if err != nil {
 			t.Log(err)
 		}
-		if eq != res {
+		if !reflect.DeepEqual(eq, res) {
 			t.Logf("%v", eq.Time)
 			t.Logf("%v", res.Time)
 
@@ -70,13 +71,14 @@ func TestParseLatestInstance(t *testing.T) {
 			t.Log(err)
 		}
 
-		if eq != res {
+		if !reflect.DeepEqual(eq, res) {
 			t.Logf("%v", eq.Time)
 			t.Logf("%v", res.Time)
 			t.Logf("%v", eq.ID)
 			t.Logf("%v", res.ID)
 			t.FailNow()
 		}
+		//t.
 	})
 
 }
