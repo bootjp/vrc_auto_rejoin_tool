@@ -7,13 +7,11 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
 	"regexp"
 	"runtime"
 	"sort"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/hpcloud/tail"
@@ -52,16 +50,8 @@ func moved(runAt time.Time, l string, loc *time.Location) (Instance, error) {
 }
 
 func lunch(instance Instance) error {
-	cmd := &exec.Cmd{
-		Path:  os.Getenv("COMSPEC"),
-		Stdin: os.Stdin,
-		SysProcAttr: &syscall.SysProcAttr{
-			CmdLine: `/S /C start vrchat://launch?id=` + instance.ID,
-		}, // when run non windows environment please comment out this line. because this line is window only system call.
-	}
-
-	_, err := cmd.Output()
-	return err
+	cmd := command(instance)
+	return cmd.Run()
 }
 
 func parseLatestInstance(logs string, loc *time.Location) (Instance, error) {
