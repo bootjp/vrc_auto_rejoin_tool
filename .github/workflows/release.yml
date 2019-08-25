@@ -18,8 +18,8 @@ jobs:
 
       - name: Check out code into the Go module directory
         uses: actions/checkout@v1
-        env:
-          GOPATH: /home/runner/work/src/githun.com/bootjp
+          with:
+            path: /home/runner/work/src/github.com/bootjp/
 
       - name: Get dependencies
         env:
