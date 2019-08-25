@@ -23,16 +23,17 @@ jobs:
         env:
           GO111MODULE: on
         run: |
+          echo $GOPATH
           go get -v -t -d ./..
 
       - name: Build as Release
         env:
           GO111MODULE: on
-          GOPATH: /home/runner/work/
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GOOS: windows
           GOARCH: amd64
         run: |
+          echo $GOPATH
           export TAGNAME=$(jq --raw-output .ref "$GITHUB_EVENT_PATH")
           go build -o dist/vrc_auto_rejoin_tool_x64.exe ./cli/main.go
           zip -r dist/vrc_auto_rejoin_tool.zip
