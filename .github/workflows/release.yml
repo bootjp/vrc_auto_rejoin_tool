@@ -21,6 +21,7 @@ jobs:
 
       - name: Get dependencies
         env:
+          GOPATH: /home/runner/work/
           GO111MODULE: on
         run: |
           echo $GOPATH
@@ -28,6 +29,7 @@ jobs:
 
       - name: Build as Release
         env:
+          GOPATH: /home/runner/work/
           GO111MODULE: on
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GOOS: windows
