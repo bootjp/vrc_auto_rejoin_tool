@@ -24,9 +24,11 @@ jobs:
           GO111MODULE: on
           GOPATH: /home/runner/work/
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GOOS: windows
+          GOARCH: amd64
         run: |
           export TAGNAME=$(jq --raw-output .ref "$GITHUB_EVENT_PATH")
-          GOOS=windows GOARCH=amd64 go build  -o dist/vrc_auto_rejoin_tool_x64.exe ./cli/main.go
+          go build -o dist/vrc_auto_rejoin_tool_x64.exe ./cli/main.go
           zip -r dist/vrc_auto_rejoin_tool.zip
           go get -u github.com/tcnksm/ghr
           $GOPATH/bin/ghr -n ${TAGNAME} -b Release ${TAGNAME} dist/
