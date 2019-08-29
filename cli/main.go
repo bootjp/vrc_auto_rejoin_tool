@@ -49,7 +49,7 @@ func moved(runAt time.Time, l string, loc *time.Location) (Instance, error) {
 	return i, nil
 }
 
-func lunch(instance Instance) error {
+func launch(instance Instance) error {
 	cmd := command(instance)
 	return cmd.Run()
 }
@@ -209,7 +209,7 @@ func main() {
 			if debug {
 				fmt.Println("latestInstance", latestInstance)
 			}
-			if err := lunch(latestInstance); err != nil {
+			if err := launch(latestInstance); err != nil {
 				log.Println(err)
 			}
 			latestInstance = nInstance
