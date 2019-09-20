@@ -25,3 +25,21 @@ jobs:
 
     - name: Test
       run: go test -v ./...
+
+    - name: Build as binary
+      env:
+        GOOS: windows
+        GOARCH: amd64
+      run: go build -o ./dist/vrc_auto_rejoin_tool_x64.exe ./cli/
+
+    - name: Achive to zip
+      run:
+        powershell compress-archive -Path dist/vrc_auto_rejoin_tool_x64.exe -DestinationPath dist/vrc_auto_rejoin_tool_x64.zip
+
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: "dist/**"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
