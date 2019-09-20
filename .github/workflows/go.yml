@@ -27,7 +27,7 @@ jobs:
       run: go test -v ./...
 
     - name: Generate binary icon
-      run: windres --output-format=coff -o cli/logoico.syso logoico.rs
+      run: windres --output-format=coff -o logoico.syso logoico.rs
 
     - name: Build as binary
       env:
