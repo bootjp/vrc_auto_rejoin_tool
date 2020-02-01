@@ -8,7 +8,7 @@ import (
 func TestYmlLoad(t *testing.T) {
 	cnf := loadSetting()
 	fmt.Printf("%v", cnf)
-	if cnf.Debug == false {
+	if cnf.Debug {
 		t.Fatal()
 	}
 }
