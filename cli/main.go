@@ -13,7 +13,6 @@ import (
 	"sort"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/hpcloud/tail"
@@ -116,22 +115,23 @@ func UserHomeDir() string {
 }
 
 func setupDebugMode(set *setting) {
-	set.debug = os.Getenv("DEBUG") == "true"
+	set.Debug = os.Getenv("DEBUG") == "true"
 }
 
 type setting struct {
-	enable_process_check bool
-	debug                bool
+	EnableProcessCheck bool `yaml:"enable_process_check"`
+	Debug              bool `yaml:"debug"`
 }
 
 // if setting file does not exits fallback to default setting.
 func loadSetting() setting {
-	file, err := ioutil.ReadFile("./setting.yml")
+	file, err := ioutil.ReadFile("setting.yml")
 	if err != nil {
 		log.Println(err)
 		return setting{}
 	}
 
+	fmt.Printf("%s\n", file)
 	t := setting{}
 	err = yaml.Unmarshal(file, &t)
 	if err != nil {
@@ -151,7 +151,7 @@ func main() {
 	conf := loadSetting()
 	setupDebugMode(&conf)
 
-	if conf.debug {
+	if conf.Debug {
 		log.Printf("%v", conf)
 	}
 
@@ -179,7 +179,7 @@ func main() {
 		}
 	}
 
-	if conf.debug {
+	if conf.Debug {
 		for _, v := range filtered {
 			fmt.Println(v.Name(), v.ModTime().Format(TimeFormat))
 		}
@@ -216,7 +216,7 @@ func main() {
 	latestInstance = i
 	fmt.Println(i)
 
-	if conf.enable_process_check {
+	if conf.EnableProcessCheck {
 		go check_prosess(conf)
 	}
 	for true {
@@ -230,7 +230,7 @@ func main() {
 		if err == NotMoved {
 			continue
 		}
-		if conf.debug {
+		if conf.Debug {
 			fmt.Println(text)
 		}
 		if err != nil {
@@ -240,7 +240,7 @@ func main() {
 		lock.Lock()
 		fmt.Println("instance move detect!!!")
 		if latestInstance != nInstance {
-			if conf.debug {
+			if conf.Debug {
 				fmt.Println("latestInstance", latestInstance)
 			}
 			if err := launch(latestInstance); err != nil {
@@ -256,19 +256,19 @@ func main() {
 func check_prosess(conf setting) {
 	for range time.Tick(3 * time.Millisecond) {
 		cmd := exec.Command("tasklist.exe", "/FI", "STATUS eq RUNNING", "/fo", "csv", "/nh")
-		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+		//cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 		out, err := cmd.Output()
 
 		if err != nil {
 			log.Println(err)
 		}
 
-		if conf.debug {
+		if conf.Debug {
 			log.Println("check process exits")
 		}
 
 		if !bytes.Contains(out, []byte("VRChat.exe")) {
-			if conf.debug {
+			if conf.Debug {
 				log.Println("process does not exits")
 			}
 			err = launch(Instance{})
