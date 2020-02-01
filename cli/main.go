@@ -249,7 +249,7 @@ func main() {
 }
 
 func check_prosess(conf setting) {
-	for range time.Tick(3 * time.Millisecond) {
+	for range time.Tick(10 * time.Second) {
 		cmd := exec.Command("tasklist.exe", "/FI", "STATUS eq RUNNING", "/fo", "csv", "/nh")
 		out, err := cmd.Output()
 
