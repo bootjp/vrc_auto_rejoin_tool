@@ -128,14 +128,14 @@ type setting struct {
 func loadSetting() setting {
 	file, err := ioutil.ReadFile("./setting.yml")
 	if err != nil {
-		log.Println("error: %v", err)
+		log.Println(err)
 		return setting{}
 	}
 
 	t := setting{}
 	err = yaml.Unmarshal(file, &t)
 	if err != nil {
-		log.Println("error: %v", err)
+		log.Println(err)
 		return setting{}
 	}
 
