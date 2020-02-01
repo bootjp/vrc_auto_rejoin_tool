@@ -7,14 +7,15 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"regexp"
 	"runtime"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/hpcloud/tail"
+	yaml "gopkg.in/yaml.v2"
 )
 
 const WorldLogPrefix = "[VRCFlowManagerVRC] Destination set: wrld_"
@@ -53,6 +54,8 @@ func launch(instance Instance) error {
 	cmd := command(instance)
 	return cmd.Run()
 }
+
+var latestInstance Instance
 
 func parseLatestInstance(logs string, loc *time.Location) (Instance, error) {
 	latestInstance := Instance{}
@@ -112,11 +115,32 @@ func UserHomeDir() string {
 	return os.Getenv("HOME")
 }
 
-var debug bool
+func setupDebugMode(set *setting) {
+	set.Debug = os.Getenv("DEBUG") == "true"
+}
 
-func setupDebugMode(home string) {
-	debug = os.Getenv("DEBUG") == "true"
-	debug = debug || strings.Contains(home, "bootjp")
+type setting struct {
+	EnableProcessCheck bool `yaml:"enable_process_check"`
+	Debug              bool `yaml:"debug"`
+}
+
+// if setting file does not exits fallback to default setting.
+func loadSetting() setting {
+	file, err := ioutil.ReadFile("setting.yml")
+	if err != nil {
+		log.Println(err)
+		return setting{}
+	}
+
+	fmt.Printf("%s\n", file)
+	t := setting{}
+	err = yaml.Unmarshal(file, &t)
+	if err != nil {
+		log.Println(err)
+		return setting{}
+	}
+
+	return t
 }
 
 func main() {
@@ -124,15 +148,20 @@ func main() {
 	if home == "" {
 		log.Fatal("home dir not detect.")
 	}
-	setupDebugMode(home)
+
+	conf := loadSetting()
+	setupDebugMode(&conf)
+
+	if conf.Debug {
+		log.Printf("%v", conf)
+	}
+
 	loc, err := time.LoadLocation(Location)
 	if err != nil {
 		loc = time.FixedZone(Location, 9*60*60)
 	}
 
 	path := home + vrcRelativeLogPath
-	latestInstance := Instance{}
-	lock := sync.Mutex{}
 
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
@@ -149,7 +178,7 @@ func main() {
 		}
 	}
 
-	if debug {
+	if conf.Debug {
 		for _, v := range filtered {
 			fmt.Println(v.Name(), v.ModTime().Format(TimeFormat))
 		}
@@ -179,12 +208,15 @@ func main() {
 		log.Println(err)
 	}
 
-	i, err := parseLatestInstance(string(content), loc)
+	latestInstance, err = parseLatestInstance(string(content), loc)
 	if err != nil {
 		log.Println(err)
 	}
-	latestInstance = i
-	fmt.Println(i)
+	fmt.Println(latestInstance)
+
+	if conf.EnableProcessCheck {
+		go check_prosess(conf)
+	}
 	for true {
 		msg, ok := <-t.Lines
 		if !ok {
@@ -196,24 +228,49 @@ func main() {
 		if err == NotMoved {
 			continue
 		}
-		if debug {
+		if conf.Debug {
 			fmt.Println(text)
 		}
 		if err != nil {
 			log.Println(err)
 		}
 
-		lock.Lock()
 		fmt.Println("instance move detect!!!")
 		if latestInstance != nInstance {
-			if debug {
+			if conf.Debug {
 				fmt.Println("latestInstance", latestInstance)
 			}
 			if err := launch(latestInstance); err != nil {
 				log.Println(err)
 			}
-			latestInstance = nInstance
 		}
-		lock.Unlock()
 	}
+
+}
+
+func check_prosess(conf setting) {
+	for range time.Tick(10 * time.Second) {
+		cmd := exec.Command("tasklist.exe", "/FI", "STATUS eq RUNNING", "/fo", "csv", "/nh")
+		out, err := cmd.Output()
+
+		if err != nil {
+			log.Println(err)
+		}
+
+		if conf.Debug {
+			log.Println("check process exits")
+		}
+
+		if !bytes.Contains(out, []byte("VRChat.exe")) {
+			if conf.Debug {
+				log.Println("process does not exits")
+			}
+			err = launch(latestInstance)
+			if err != nil {
+				log.Println(err)
+			}
+			return // throw check_process
+		}
+	}
+
 }
