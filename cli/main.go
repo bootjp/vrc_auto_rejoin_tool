@@ -251,7 +251,6 @@ func main() {
 func check_prosess(conf setting) {
 	for range time.Tick(3 * time.Millisecond) {
 		cmd := exec.Command("tasklist.exe", "/FI", "STATUS eq RUNNING", "/fo", "csv", "/nh")
-		//cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 		out, err := cmd.Output()
 
 		if err != nil {
@@ -270,7 +269,7 @@ func check_prosess(conf setting) {
 			if err != nil {
 				log.Println(err)
 			}
-			return // throw check process
+			return // throw check_process
 		}
 	}
 
