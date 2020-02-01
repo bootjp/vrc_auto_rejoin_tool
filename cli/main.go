@@ -151,6 +151,10 @@ func main() {
 	conf := loadSetting()
 	setupDebugMode(&conf)
 
+	if conf.debug {
+		log.Printf("%v", conf)
+	}
+
 	loc, err := time.LoadLocation(Location)
 	if err != nil {
 		loc = time.FixedZone(Location, 9*60*60)
@@ -257,6 +261,10 @@ func check_prosess(conf setting) {
 
 		if err != nil {
 			log.Println(err)
+		}
+
+		if conf.debug {
+			log.Println("check process exits")
 		}
 
 		if !bytes.Contains(out, []byte("VRChat.exe")) {
