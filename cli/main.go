@@ -12,7 +12,6 @@ import (
 	"runtime"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/hpcloud/tail"
@@ -55,6 +54,8 @@ func launch(instance Instance) error {
 	cmd := command(instance)
 	return cmd.Run()
 }
+
+var latestInstance Instance
 
 func parseLatestInstance(logs string, loc *time.Location) (Instance, error) {
 	latestInstance := Instance{}
@@ -161,8 +162,6 @@ func main() {
 	}
 
 	path := home + vrcRelativeLogPath
-	latestInstance := Instance{}
-	lock := sync.Mutex{}
 
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
@@ -209,12 +208,11 @@ func main() {
 		log.Println(err)
 	}
 
-	i, err := parseLatestInstance(string(content), loc)
+	latestInstance, err = parseLatestInstance(string(content), loc)
 	if err != nil {
 		log.Println(err)
 	}
-	latestInstance = i
-	fmt.Println(i)
+	fmt.Println(latestInstance)
 
 	if conf.EnableProcessCheck {
 		go check_prosess(conf)
@@ -237,7 +235,6 @@ func main() {
 			log.Println(err)
 		}
 
-		lock.Lock()
 		fmt.Println("instance move detect!!!")
 		if latestInstance != nInstance {
 			if conf.Debug {
@@ -246,9 +243,7 @@ func main() {
 			if err := launch(latestInstance); err != nil {
 				log.Println(err)
 			}
-			latestInstance = nInstance
 		}
-		lock.Unlock()
 	}
 
 }
@@ -271,10 +266,11 @@ func check_prosess(conf setting) {
 			if conf.Debug {
 				log.Println("process does not exits")
 			}
-			err = launch(Instance{})
+			err = launch(latestInstance)
 			if err != nil {
 				log.Println(err)
 			}
+			return // throw check process
 		}
 	}
 
