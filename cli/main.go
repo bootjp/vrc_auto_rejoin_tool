@@ -143,18 +143,25 @@ func loadSetting() setting {
 	return t
 }
 
+var conf setting
+
+func debugLog(l ...interface{}) {
+	if conf.Debug {
+		log.Printf("%v", l)
+	}
+
+}
+
 func main() {
 	home := UserHomeDir()
 	if home == "" {
 		log.Fatal("home dir not detect.")
 	}
 
-	conf := loadSetting()
+	conf = loadSetting()
 	setupDebugMode(&conf)
 
-	if conf.Debug {
-		log.Printf("%v", conf)
-	}
+	debugLog(conf)
 
 	loc, err := time.LoadLocation(Location)
 	if err != nil {
@@ -178,11 +185,6 @@ func main() {
 		}
 	}
 
-	if conf.Debug {
-		for _, v := range filtered {
-			fmt.Println(v.Name(), v.ModTime().Format(TimeFormat))
-		}
-	}
 	latestLog := ""
 	if len(filtered) > 0 {
 		latestLog = filtered[0].Name()
@@ -215,7 +217,7 @@ func main() {
 	fmt.Println(latestInstance)
 
 	if conf.EnableProcessCheck {
-		go check_prosess(conf)
+		go checkProcess(conf)
 	}
 	for true {
 		msg, ok := <-t.Lines
@@ -228,18 +230,15 @@ func main() {
 		if err == NotMoved {
 			continue
 		}
-		if conf.Debug {
-			fmt.Println(text)
-		}
+		debugLog(text)
+
 		if err != nil {
 			log.Println(err)
 		}
 
-		fmt.Println("instance move detect!!!")
+		fmt.Println("detected instance move")
 		if latestInstance != nInstance {
-			if conf.Debug {
-				fmt.Println("latestInstance", latestInstance)
-			}
+			debugLog("latestInstance", latestInstance)
 			if err := launch(latestInstance); err != nil {
 				log.Println(err)
 			}
@@ -248,7 +247,7 @@ func main() {
 
 }
 
-func check_prosess(conf setting) {
+func checkProcess(conf setting) {
 	for range time.Tick(10 * time.Second) {
 		cmd := exec.Command("tasklist.exe", "/FI", "STATUS eq RUNNING", "/fo", "csv", "/nh")
 		out, err := cmd.Output()
@@ -257,19 +256,15 @@ func check_prosess(conf setting) {
 			log.Println(err)
 		}
 
-		if conf.Debug {
-			log.Println("check process exits")
-		}
-
+		debugLog("check process exits")
 		if !bytes.Contains(out, []byte("VRChat.exe")) {
-			if conf.Debug {
-				log.Println("process does not exits")
-			}
+			debugLog("process does not exits")
+
 			err = launch(latestInstance)
 			if err != nil {
 				log.Println(err)
 			}
-			return // throw check_process
+			return // throw checkProcess
 		}
 	}
 
