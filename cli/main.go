@@ -116,10 +116,6 @@ func UserHomeDir() string {
 	return os.Getenv("HOME")
 }
 
-func setupDebugMode(set *setting) {
-	set.Debug = os.Getenv("DEBUG") == "true"
-}
-
 type setting struct {
 	EnableProcessCheck bool `yaml:"enable_process_check"`
 	Debug              bool `yaml:"debug"`
@@ -234,7 +230,6 @@ func main() {
 	}
 
 	conf = loadSetting()
-	setupDebugMode(&conf)
 
 	debugLog(conf)
 
