@@ -12,6 +12,7 @@ import (
 	"runtime"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/hpcloud/tail"
@@ -149,27 +150,19 @@ func debugLog(l ...interface{}) {
 	if conf.Debug {
 		log.Printf("%v", l)
 	}
-
 }
 
-func main() {
-	home := UserHomeDir()
-	if home == "" {
-		log.Fatal("home dir not detect.")
-	}
+func loadLatestInstance(filepath string, location *time.Location) (Instance, error) {
 
-	conf = loadSetting()
-	setupDebugMode(&conf)
-
-	debugLog(conf)
-
-	loc, err := time.LoadLocation(Location)
+	content, err := ioutil.ReadFile(filepath)
 	if err != nil {
-		loc = time.FixedZone(Location, 9*60*60)
+		log.Println(err)
 	}
 
-	path := home + vrcRelativeLogPath
+	return parseLatestInstance(string(content), location)
+}
 
+func fetchLatestLogName(path string) (string, error) {
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
 		log.Println(err)
@@ -190,34 +183,18 @@ func main() {
 		latestLog = filtered[0].Name()
 	}
 
-	startAt := time.Now().In(loc)
-	fmt.Println("RUNNING START AT", startAt.Format(TimeFormat))
+	return latestLog, nil
+}
 
-	fmt.Println(path + latestLog)
+func checkMoveInstance(path string, latestLog string, startAt time.Time, loc *time.Location, wg *sync.WaitGroup) {
 	t, err := tail.TailFile(path+latestLog, tail.Config{
 		Follow:    true,
 		MustExist: true,
 		ReOpen:    true,
 		Poll:      true,
 	})
-
 	if err != nil {
 		log.Println(err)
-	}
-
-	content, err := ioutil.ReadFile(path + latestLog)
-	if err != nil {
-		log.Println(err)
-	}
-
-	latestInstance, err = parseLatestInstance(string(content), loc)
-	if err != nil {
-		log.Println(err)
-	}
-	fmt.Println(latestInstance)
-
-	if conf.EnableProcessCheck {
-		go checkProcess(conf)
 	}
 	for true {
 		msg, ok := <-t.Lines
@@ -242,12 +219,56 @@ func main() {
 			if err := launch(latestInstance); err != nil {
 				log.Println(err)
 			}
+			wg.Done()
+			return
 		}
 	}
-
 }
 
-func checkProcess(conf setting) {
+func main() {
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	home := UserHomeDir()
+	if home == "" {
+		log.Fatal("home dir not detect.")
+	}
+
+	conf = loadSetting()
+	setupDebugMode(&conf)
+
+	debugLog(conf)
+
+	loc, err := time.LoadLocation(Location)
+	if err != nil {
+		loc = time.FixedZone(Location, 9*60*60)
+	}
+
+	path := home + vrcRelativeLogPath
+
+	latestLog, err := fetchLatestLogName(path)
+
+	if err != nil {
+		log.Fatalf("log file not found. %s", err)
+	}
+
+	startAt := time.Now().In(loc)
+	fmt.Println("RUNNING START AT", startAt.Format(TimeFormat))
+
+	latestInstance, err = loadLatestInstance(path+latestLog, loc)
+	if err != nil {
+		log.Println(err)
+	}
+
+	if conf.EnableProcessCheck {
+		go checkProcess(wg)
+	}
+
+	fmt.Println(path + latestLog)
+	go checkMoveInstance(path, latestLog, startAt, loc, wg)
+	wg.Wait()
+}
+
+func checkProcess(wg *sync.WaitGroup) {
 	for range time.Tick(10 * time.Second) {
 		cmd := exec.Command("tasklist.exe", "/FI", "STATUS eq RUNNING", "/fo", "csv", "/nh")
 		out, err := cmd.Output()
@@ -264,6 +285,7 @@ func checkProcess(conf setting) {
 			if err != nil {
 				log.Println(err)
 			}
+			wg.Done()
 			return // throw checkProcess
 		}
 	}
