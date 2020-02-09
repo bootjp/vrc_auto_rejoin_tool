@@ -12,6 +12,7 @@ import (
 	"runtime"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/hpcloud/tail"
@@ -115,10 +116,6 @@ func UserHomeDir() string {
 	return os.Getenv("HOME")
 }
 
-func setupDebugMode(set *setting) {
-	set.Debug = os.Getenv("DEBUG") == "true"
-}
-
 type setting struct {
 	EnableProcessCheck bool `yaml:"enable_process_check"`
 	Debug              bool `yaml:"debug"`
@@ -143,26 +140,25 @@ func loadSetting() setting {
 	return t
 }
 
-func main() {
-	home := UserHomeDir()
-	if home == "" {
-		log.Fatal("home dir not detect.")
-	}
+var conf setting
 
-	conf := loadSetting()
-	setupDebugMode(&conf)
-
+func debugLog(l ...interface{}) {
 	if conf.Debug {
-		log.Printf("%v", conf)
+		log.Printf("%v", l)
 	}
+}
 
-	loc, err := time.LoadLocation(Location)
+func loadLatestInstance(filepath string, location *time.Location) (Instance, error) {
+
+	content, err := ioutil.ReadFile(filepath)
 	if err != nil {
-		loc = time.FixedZone(Location, 9*60*60)
+		log.Println(err)
 	}
 
-	path := home + vrcRelativeLogPath
+	return parseLatestInstance(string(content), location)
+}
 
+func fetchLatestLogName(path string) (string, error) {
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
 		log.Println(err)
@@ -178,44 +174,23 @@ func main() {
 		}
 	}
 
-	if conf.Debug {
-		for _, v := range filtered {
-			fmt.Println(v.Name(), v.ModTime().Format(TimeFormat))
-		}
-	}
 	latestLog := ""
 	if len(filtered) > 0 {
 		latestLog = filtered[0].Name()
 	}
 
-	startAt := time.Now().In(loc)
-	fmt.Println("RUNNING START AT", startAt.Format(TimeFormat))
+	return latestLog, nil
+}
 
-	fmt.Println(path + latestLog)
+func checkMoveInstance(path string, latestLog string, startAt time.Time, loc *time.Location, wg *sync.WaitGroup) {
 	t, err := tail.TailFile(path+latestLog, tail.Config{
 		Follow:    true,
 		MustExist: true,
 		ReOpen:    true,
 		Poll:      true,
 	})
-
 	if err != nil {
 		log.Println(err)
-	}
-
-	content, err := ioutil.ReadFile(path + latestLog)
-	if err != nil {
-		log.Println(err)
-	}
-
-	latestInstance, err = parseLatestInstance(string(content), loc)
-	if err != nil {
-		log.Println(err)
-	}
-	fmt.Println(latestInstance)
-
-	if conf.EnableProcessCheck {
-		go check_prosess(conf)
 	}
 	for true {
 		msg, ok := <-t.Lines
@@ -228,27 +203,67 @@ func main() {
 		if err == NotMoved {
 			continue
 		}
-		if conf.Debug {
-			fmt.Println(text)
-		}
+		debugLog(text)
+
 		if err != nil {
 			log.Println(err)
 		}
 
-		fmt.Println("instance move detect!!!")
+		fmt.Println("detected instance move")
 		if latestInstance != nInstance {
-			if conf.Debug {
-				fmt.Println("latestInstance", latestInstance)
-			}
+			debugLog("latestInstance", latestInstance)
 			if err := launch(latestInstance); err != nil {
 				log.Println(err)
 			}
+			wg.Done()
+			return
 		}
 	}
-
 }
 
-func check_prosess(conf setting) {
+func main() {
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	home := UserHomeDir()
+	if home == "" {
+		log.Fatal("home dir not detect.")
+	}
+
+	conf = loadSetting()
+
+	debugLog(conf)
+
+	loc, err := time.LoadLocation(Location)
+	if err != nil {
+		loc = time.FixedZone(Location, 9*60*60)
+	}
+
+	path := home + vrcRelativeLogPath
+
+	latestLog, err := fetchLatestLogName(path)
+
+	if err != nil {
+		log.Fatalf("log file not found. %s", err)
+	}
+
+	startAt := time.Now().In(loc)
+	fmt.Println("RUNNING START AT", startAt.Format(TimeFormat))
+
+	latestInstance, err = loadLatestInstance(path+latestLog, loc)
+	if err != nil {
+		log.Println(err)
+	}
+
+	if conf.EnableProcessCheck {
+		go checkProcess(wg)
+	}
+
+	fmt.Println(path + latestLog)
+	go checkMoveInstance(path, latestLog, startAt, loc, wg)
+	wg.Wait()
+}
+
+func checkProcess(wg *sync.WaitGroup) {
 	for range time.Tick(10 * time.Second) {
 		cmd := exec.Command("tasklist.exe", "/FI", "STATUS eq RUNNING", "/fo", "csv", "/nh")
 		out, err := cmd.Output()
@@ -257,19 +272,16 @@ func check_prosess(conf setting) {
 			log.Println(err)
 		}
 
-		if conf.Debug {
-			log.Println("check process exits")
-		}
-
+		debugLog("check process exits")
 		if !bytes.Contains(out, []byte("VRChat.exe")) {
-			if conf.Debug {
-				log.Println("process does not exits")
-			}
+			debugLog("process does not exits")
+
 			err = launch(latestInstance)
 			if err != nil {
 				log.Println(err)
 			}
-			return // throw check_process
+			wg.Done()
+			return // throw checkProcess
 		}
 	}
 
