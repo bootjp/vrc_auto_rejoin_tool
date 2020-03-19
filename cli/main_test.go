@@ -202,7 +202,7 @@ func TestMove(t *testing.T) {
 }
 
 func TestFindProcessByName(t *testing.T) {
-	cmd := exec.Command("cmd", "timeout 3")
+	cmd := exec.Command("cmd", "/C", "timeout", "3")
 	err := cmd.Start()
 	if err != nil {
 		t.Fatal(err)
