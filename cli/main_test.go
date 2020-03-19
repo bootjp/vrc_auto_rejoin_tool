@@ -207,7 +207,7 @@ func TestFindProcessByName(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if ok, _ := findProcessByName("cmd.exe"); ok {
-		t.FailNow()
+	if exists, _ := findProcessByName("cmd.exe"); !exists {
+		t.Fatal("process not found")
 	}
 }
