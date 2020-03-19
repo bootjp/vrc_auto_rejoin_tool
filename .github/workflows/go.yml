@@ -8,10 +8,10 @@ jobs:
     steps:
 
 
-    - name: Set up Go 1.12
+    - name: Set up Go 1.14
       uses: actions/setup-go@v1
       with:
-        go-version: 1.12
+        go-version: 1.14
       id: go
 
     - name: Check out code into the Go module directory
@@ -38,6 +38,7 @@ jobs:
     - name: Achive to zip
       run:
         powershell compress-archive -Path dist/* -DestinationPath dist/vrc_auto_rejoin_tool_x64.zip
+        Remove-Item ./dist/vrc_auto_rejoin_tool_x64.exe
 
     - name: Release
       uses: softprops/action-gh-release@v1
