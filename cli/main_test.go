@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/exec"
 	"reflect"
-	"syscall"
 	"testing"
 	"time"
 )
@@ -203,13 +202,7 @@ func TestMove(t *testing.T) {
 }
 
 func TestFindProcessByName(t *testing.T) {
-	cmd := &exec.Cmd{
-		Path:  os.Getenv("COMSPEC"),
-		Stdin: os.Stdin,
-		SysProcAttr: &syscall.SysProcAttr{
-			CmdLine: `/S /C timeout 10`,
-		},
-	}
+	cmd := exec.Command("cmd", "timeout 3")
 	err := cmd.Start()
 	if err != nil {
 		t.Fatal(err)
