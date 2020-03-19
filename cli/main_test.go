@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"reflect"
 	"testing"
 	"time"
@@ -198,4 +199,15 @@ func TestMove(t *testing.T) {
 			t.FailNow()
 		}
 	})
+}
+
+func TestFindProcessByName(t *testing.T) {
+	cmd := exec.Command("cmd", "/C", "timeout", "3")
+	err := cmd.Start()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if exists, _ := findProcessByName("cmd.exe"); !exists {
+		t.Fatal("process not found")
+	}
 }

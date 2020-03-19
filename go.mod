@@ -10,7 +10,7 @@ require (
 	github.com/hpcloud/tail v1.0.0
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/keybase/go-ps v0.0.0-20190827175125-91aafc93ba19 // indirect
-	github.com/mitchellh/go-ps v0.0.0-20190716172923-621e5597135b // indirect
+	github.com/mitchellh/go-ps v1.0.0
 	github.com/shirou/gopsutil v2.19.12+incompatible // indirect
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/stretchr/testify v1.4.0 // indirect
