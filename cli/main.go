@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/mitchellh/go-ps"
 	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
 	"regexp"
 	"runtime"
 	"sort"
@@ -209,16 +209,37 @@ func checkMoveInstance(path string, latestLog string, startAt time.Time, loc *ti
 			log.Println(err)
 		}
 
-		fmt.Println("detected instance move")
-		if latestInstance != nInstance {
-			debugLog("latestInstance", latestInstance)
-			if err := launch(latestInstance); err != nil {
-				log.Println(err)
-			}
-			wg.Done()
-			return
+		if latestInstance == nInstance {
+			continue
 		}
+		fmt.Println("detected instance move")
+		debugLog("latestInstance", latestInstance)
+
+		err = KillProcessByName("VRChat.exe")
+		if err != nil {
+			log.Println(err)
+		}
+		if err := launch(latestInstance); err != nil {
+			log.Println(err)
+		}
+		wg.Done()
+		return
 	}
+}
+func KillProcessByName(name string) error {
+	if exits, pid := findProcessByName(name); exits {
+		process, err := os.FindProcess(pid)
+		if err != nil {
+			return err
+		}
+		err = process.Kill()
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	return nil
 }
 
 func main() {
@@ -263,20 +284,30 @@ func main() {
 	wg.Wait()
 }
 
+func findProcessByName(name string) (bool, int) {
+	processes, err := ps.Processes()
+	if err != nil {
+		return false, -1
+	}
+
+	for _, p := range processes {
+		if strings.Contains(p.Executable(), name) {
+			return true, p.Pid()
+		}
+	}
+
+	return false, -1
+}
+
 func checkProcess(wg *sync.WaitGroup) {
 	for range time.Tick(10 * time.Second) {
-		cmd := exec.Command("tasklist.exe", "/FI", "STATUS eq RUNNING", "/fo", "csv", "/nh")
-		out, err := cmd.Output()
-
-		if err != nil {
-			log.Println(err)
-		}
 
 		debugLog("check process exits")
-		if !bytes.Contains(out, []byte("VRChat.exe")) {
+		findProcessByName("VRChat.exe")
+		if exits, _ := findProcessByName("VRChat.exe"); !exits {
 			debugLog("process does not exits")
 
-			err = launch(latestInstance)
+			err := launch(latestInstance)
 			if err != nil {
 				log.Println(err)
 			}
