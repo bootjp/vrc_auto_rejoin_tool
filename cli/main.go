@@ -303,8 +303,8 @@ func checkProcess(wg *sync.WaitGroup) {
 	for range time.Tick(10 * time.Second) {
 
 		debugLog("check process exits")
-		findProcessByName("VRChat.exe")
-		if exits, _ := findProcessByName("VRChat.exe"); !exits {
+		exists, _ := findProcessByName("VRChat.exe")
+		if !exists {
 			debugLog("process does not exits")
 
 			err := launch(latestInstance)
