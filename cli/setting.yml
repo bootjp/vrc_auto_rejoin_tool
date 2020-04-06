@@ -1,3 +1,4 @@
 ---
 enable_process_check: yes
 debug: no
+enable_radio_exercises: yes
