@@ -211,3 +211,32 @@ func TestFindProcessByName(t *testing.T) {
 		t.Fatal("process not found")
 	}
 }
+
+func TestInTimeRange(t *testing.T) {
+	loc, err := time.LoadLocation(Location)
+	if err != nil {
+		loc = time.FixedZone(Location, 9*60*60)
+	}
+	tests := []struct {
+		start   string
+		end     string
+		check   string
+		inRange bool
+	}{
+		{"05:45", "08:00", "04:00", false},
+		{"05:45", "08:00", "23:30", false},
+		{"05:45", "08:00", "05:46", true},
+		{"05:45", "08:00", "06:00", true},
+		{"05:45", "08:00", "08:00", true},
+		{"05:45", "08:00", "03:00", false},
+	}
+	newLayout := "15:04"
+	for _, test := range tests {
+		check, _ := time.ParseInLocation(newLayout, test.check, loc)
+		start, _ := time.ParseInLocation(newLayout, test.start, loc)
+		end, _ := time.ParseInLocation(newLayout, test.end, loc)
+		if InTimeRange(start, end, check) != test.inRange {
+			t.Errorf("test is failed expect %v given %v", test.inRange, InTimeRange(start, end, check))
+		}
+	}
+}

@@ -1,3 +1,4 @@
 ---
-enable_process_check: no
-debug: no
+enable_process_check: no   # VRChat.exe がダウンしたときも auto_rejoin_tool で元のインスタンスに戻る対象とする
+enable_radio_exercises: no # 5:45 ~ 8:00 のインスタンス移動の検出を無効化します．
+debug: no                  # yes にするといろいろログがでます，バグ報告時などに
