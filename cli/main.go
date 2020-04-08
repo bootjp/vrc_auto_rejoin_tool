@@ -227,7 +227,7 @@ func checkMoveInstance(path string, latestLog string, startAt time.Time, loc *ti
 
 		if conf.EnableRadioExercises {
 			layout := "15:04"
-			start, err := time.ParseInLocation(layout, "08:00", loc)
+			start, err := time.ParseInLocation(layout, "05:45", loc)
 			if err != nil {
 				log.Println(err)
 			}
