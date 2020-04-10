@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"reflect"
+	"runtime"
 	"testing"
 	"time"
 )
@@ -202,6 +203,9 @@ func TestMove(t *testing.T) {
 }
 
 func TestFindProcessByName(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		return
+	}
 	cmd := exec.Command("cmd", "/C", "timeout", "3")
 	err := cmd.Start()
 	if err != nil {
