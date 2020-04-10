@@ -20,7 +20,7 @@ import (
 )
 
 const WorldLogPrefix = "[VRCFlowManagerVRC] Destination set: wrld_"
-const Location = "Asia/Tokyo"
+const Location = "Local"
 const TimeFormat = "2006.01.02 15:04:05"
 const vrcRelativeLogPath = `\AppData\LocalLow\VRChat\VRChat\`
 
@@ -226,15 +226,22 @@ func checkMoveInstance(path string, latestLog string, startAt time.Time, loc *ti
 		}
 
 		if conf.EnableRadioExercises {
+			now := time.Now().In(loc)
 			layout := "15:04"
+
 			start, err := time.ParseInLocation(layout, "05:45", loc)
 			if err != nil {
 				log.Println(err)
+				continue
 			}
+			start.AddDate(now.Year(), int(now.Month())-1, now.Day())
+
 			end, err := time.ParseInLocation(layout, "08:00", loc)
 			if err != nil {
 				log.Println(err)
+				continue
 			}
+			end.AddDate(now.Year(), int(now.Month())-1, now.Day())
 
 			if InTimeRange(start, end, time.Now().In(loc)) {
 				continue
@@ -285,7 +292,7 @@ func main() {
 
 	loc, err := time.LoadLocation(Location)
 	if err != nil {
-		loc = time.FixedZone(Location, 9*60*60)
+		time.Local = time.FixedZone(Location, 9*60*60)
 	}
 
 	path := home + vrcRelativeLogPath

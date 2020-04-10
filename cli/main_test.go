@@ -239,4 +239,43 @@ func TestInTimeRange(t *testing.T) {
 			t.Errorf("test is failed expect %v given %v", test.inRange, InTimeRange(start, end, check))
 		}
 	}
+
+}
+func TestTime(t *testing.T) {
+	loc, err := time.LoadLocation("local")
+	if err != nil {
+		loc = time.FixedZone(Location, 9*60*60)
+	}
+	tests := []struct {
+		check   string
+		inRange bool
+	}{
+		{"04:00", false},
+		{"23:30", false},
+		{"05:46", true},
+		{"06:00", true},
+		{"08:00", true},
+		{"03:00", false},
+	}
+	newLayout := "15:04"
+	now := time.Now().In(loc).AddDate(0, 0, -1)
+	fmt.Println(now)
+
+	for _, test := range tests {
+
+		start, _ := time.ParseInLocation(newLayout, "05:45", loc)
+		end, _ := time.ParseInLocation(newLayout, "08:00", loc)
+
+		start = start.AddDate(now.Year(), int(now.Month())-1, now.Day())
+		end = end.AddDate(now.Year(), int(now.Month())-1, now.Day())
+		check, _ := time.ParseInLocation(newLayout, test.check, loc)
+		check = check.AddDate(now.Year(), int(now.Month())-1, now.Day())
+
+		fmt.Println(start)
+		fmt.Println(end)
+		if InTimeRange(start, end, check) != test.inRange {
+			t.Errorf("check %v test is failed expect %v given %v", test.check,
+				test.inRange, InTimeRange(start, end, check))
+		}
+	}
 }
