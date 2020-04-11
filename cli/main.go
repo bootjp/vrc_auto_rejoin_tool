@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/jinzhu/now"
 	"github.com/mitchellh/go-ps"
 	"io/ioutil"
 	"log"
@@ -226,22 +227,17 @@ func checkMoveInstance(path string, latestLog string, startAt time.Time, loc *ti
 		}
 
 		if conf.EnableRadioExercises {
-			now := time.Now().In(loc)
-			layout := "15:04"
-
-			start, err := time.ParseInLocation(layout, "05:45", loc)
+			start, err := now.ParseInLocation(loc, "05:45")
 			if err != nil {
 				log.Println(err)
 				continue
 			}
-			start.AddDate(now.Year(), int(now.Month())-1, now.Day())
 
-			end, err := time.ParseInLocation(layout, "08:00", loc)
+			end, err := now.ParseInLocation(loc, "08:00")
 			if err != nil {
 				log.Println(err)
 				continue
 			}
-			end.AddDate(now.Year(), int(now.Month())-1, now.Day())
 
 			if InTimeRange(start, end, time.Now().In(loc)) {
 				continue

@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+
+	"github.com/jinzhu/now"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -261,22 +263,19 @@ func TestTime(t *testing.T) {
 		{"08:00", true},
 		{"03:00", false},
 	}
-	newLayout := "15:04"
-	now := time.Now().In(loc).AddDate(0, 0, -1)
-	fmt.Println(now)
+
+	current := time.Now().In(loc)
 
 	for _, test := range tests {
 
-		start, _ := time.ParseInLocation(newLayout, "05:45", loc)
-		end, _ := time.ParseInLocation(newLayout, "08:00", loc)
+		start, _ := now.ParseInLocation(loc, "05:45")
+		end, _ := now.ParseInLocation(loc, "08:00")
+		check, _ := now.ParseInLocation(loc, test.check)
 
-		start = start.AddDate(now.Year(), int(now.Month())-1, now.Day())
-		end = end.AddDate(now.Year(), int(now.Month())-1, now.Day())
-		check, _ := time.ParseInLocation(newLayout, test.check, loc)
-		check = check.AddDate(now.Year(), int(now.Month())-1, now.Day())
+		if check.Format("2006-01-02") != current.Format("2006-01-02") {
+			t.Errorf("test logic error. check date and current must be equal")
+		}
 
-		fmt.Println(start)
-		fmt.Println(end)
 		if InTimeRange(start, end, check) != test.inRange {
 			t.Errorf("check %v test is failed expect %v given %v", test.check,
 				test.inRange, InTimeRange(start, end, check))
