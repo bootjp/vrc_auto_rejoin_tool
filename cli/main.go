@@ -375,19 +375,18 @@ func findProcessByName(name string) (bool, int) {
 }
 
 func findProcessArgsByName(n string) ([]string, error) {
-	// https://gist.github.com/minami14/19927f265aa3ab5afb689191cc6719e6
 	ok, pid := findProcessByName(n)
 	if !ok {
 		return nil, errors.New("process does not exits")
 	}
 
-	processe, err := process.NewProcess(int32(pid))
+	process, err := process.NewProcess(int32(pid))
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
 
-	return processe.CmdlineSlice()
+	return process.CmdlineSlice()
 }
 
 func checkProcess(wg *sync.WaitGroup) {
