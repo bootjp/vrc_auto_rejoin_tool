@@ -9,6 +9,7 @@ import (
 	"github.com/faiface/beep/wav"
 	"github.com/jinzhu/now"
 	"github.com/mitchellh/go-ps"
+	"github.com/shirou/gopsutil/process"
 	"io/ioutil"
 	"log"
 	"os"
@@ -234,7 +235,7 @@ func checkMoveInstance(path string, latestLog string, startAt time.Time, loc *ti
 	if err != nil {
 		log.Println(err)
 	}
-	for true {
+	for {
 		msg, ok := <-t.Lines
 		if !ok {
 			continue
@@ -313,6 +314,13 @@ func main() {
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 	home := UserHomeDir()
+	runArgs, err := findProcessArgsByName("VRChat")
+	if err != nil {
+		log.Println(err)
+	}
+
+	debugLog(runArgs)
+
 	if home == "" {
 		log.Fatal("home dir not detect.")
 	}
@@ -364,6 +372,22 @@ func findProcessByName(name string) (bool, int) {
 	}
 
 	return false, -1
+}
+
+func findProcessArgsByName(n string) ([]string, error) {
+	// https://gist.github.com/minami14/19927f265aa3ab5afb689191cc6719e6
+	ok, pid := findProcessByName(n)
+	if !ok {
+		return nil, errors.New("process does not exits")
+	}
+
+	processe, err := process.NewProcess(int32(pid))
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	return processe.CmdlineSlice()
 }
 
 func checkProcess(wg *sync.WaitGroup) {
