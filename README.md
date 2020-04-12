@@ -21,4 +21,6 @@ VR睡眠して朝起きるとホームに一人でいることを防ぎたくて
 
 
 ## License
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fbootjp%2Fvrc_auto_rejoin_tool.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fbootjp%2Fvrc_auto_rejoin_tool?ref=badge_large)
+- [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fbootjp%2Fvrc_auto_rejoin_tool.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fbootjp%2Fvrc_auto_rejoin_tool?ref=badge_large)
+- 同梱しているwavファイルは CeVIO の さとうささら を利用しています．
+
