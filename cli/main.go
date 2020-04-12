@@ -385,6 +385,8 @@ func findProcessArgsByName(n string) ([]string, error) {
 		log.Println(err)
 		return nil, err
 	}
+	debug, _ := p.Cmdline()
+	debugLog(debug)
 
 	return p.CmdlineSlice()
 }
