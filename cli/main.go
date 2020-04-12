@@ -375,6 +375,30 @@ func findProcessByName(name string) (bool, int) {
 }
 
 func findProcessArgsByName(n string) ([]string, error) {
+	if conf.Debug {
+
+		processes, err := process.Processes()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		for _, p := range processes {
+			cmd, err := p.Cmdline()
+			if err != nil {
+				log.Println(err)
+			}
+
+			if strings.Contains(cmd, n) {
+				i := strings.Index(cmd, " ") + 1
+				if i < len(cmd) {
+					arg := cmd[i:]
+					fmt.Println(arg)
+				}
+				break
+			}
+		}
+	}
+
 	ok, pid := findProcessByName(n)
 	if !ok {
 		return nil, errors.New("process does not exits")
