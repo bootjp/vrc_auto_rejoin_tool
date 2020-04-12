@@ -56,10 +56,6 @@ func moved(runAt time.Time, l string, loc *time.Location) (Instance, error) {
 }
 
 func launch(instance Instance) error {
-	if conf.EnableRejoinNotice {
-		playAudio("rejoin_notice.wav")
-		time.Sleep(1 * time.Minute)
-	}
 	cmd := command(instance)
 	return cmd.Run()
 }
@@ -280,6 +276,11 @@ func checkMoveInstance(path string, latestLog string, startAt time.Time, loc *ti
 		debugLog("detected instance move")
 		debugLog("latestInstance", latestInstance)
 
+		if conf.EnableRejoinNotice {
+			playAudio("rejoin_notice.wav")
+			time.Sleep(1 * time.Minute)
+		}
+
 		err = KillProcessByName("VRChat.exe")
 		if err != nil {
 			log.Println(err)
@@ -372,7 +373,10 @@ func checkProcess(wg *sync.WaitGroup) {
 		exists, _ := findProcessByName("VRChat.exe")
 		if !exists {
 			debugLog("process does not exits")
-
+			if conf.EnableRejoinNotice {
+				playAudio("rejoin_notice.wav")
+				time.Sleep(1 * time.Minute)
+			}
 			err := launch(latestInstance)
 			if err != nil {
 				log.Println(err)
