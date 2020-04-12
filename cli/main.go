@@ -380,13 +380,13 @@ func findProcessArgsByName(n string) ([]string, error) {
 		return nil, errors.New("process does not exits")
 	}
 
-	process, err := process.NewProcess(int32(pid))
+	p, err := process.NewProcess(int32(pid))
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
 
-	return process.CmdlineSlice()
+	return p.CmdlineSlice()
 }
 
 func checkProcess(wg *sync.WaitGroup) {
