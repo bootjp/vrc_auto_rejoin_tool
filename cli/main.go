@@ -160,8 +160,7 @@ func loadSetting() setting {
 		log.Println(err)
 		return setting{}
 	}
-
-	fmt.Printf("%s\n", file)
+	debugLog("%s\n", file)
 	t := setting{}
 	err = yaml.Unmarshal(file, &t)
 	if err != nil {
@@ -310,6 +309,7 @@ func KillProcessByName(name string) error {
 }
 
 func main() {
+	conf = loadSetting()
 	playAudio("start.wav")
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
@@ -324,8 +324,6 @@ func main() {
 	if home == "" {
 		log.Fatal("home dir not detect.")
 	}
-
-	conf = loadSetting()
 
 	debugLog(conf)
 
