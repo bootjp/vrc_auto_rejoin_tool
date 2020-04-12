@@ -295,11 +295,11 @@ func checkMoveInstance(path string, latestLog string, startAt time.Time, loc *ti
 }
 func KillProcessByName(name string) error {
 	if exits, pid := findProcessByName(name); exits {
-		process, err := os.FindProcess(pid)
+		p, err := os.FindProcess(pid)
 		if err != nil {
 			return err
 		}
-		err = process.Kill()
+		err = p.Kill()
 		if err != nil {
 			return err
 		}
@@ -314,7 +314,7 @@ func main() {
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 	home := UserHomeDir()
-	runArgs, err := findProcessArgsByName("VRChat")
+	runArgs, err := findProcessArgsByName("VRChat.exe")
 	if err != nil {
 		log.Println(err)
 	}
