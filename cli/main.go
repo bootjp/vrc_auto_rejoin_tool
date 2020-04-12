@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/jinzhu/now"
 	"github.com/mitchellh/go-ps"
 	"io/ioutil"
 	"log"
@@ -20,7 +21,7 @@ import (
 )
 
 const WorldLogPrefix = "[VRCFlowManagerVRC] Destination set: wrld_"
-const Location = "Asia/Tokyo"
+const Location = "Local"
 const TimeFormat = "2006.01.02 15:04:05"
 const vrcRelativeLogPath = `\AppData\LocalLow\VRChat\VRChat\`
 
@@ -117,8 +118,9 @@ func UserHomeDir() string {
 }
 
 type setting struct {
-	EnableProcessCheck bool `yaml:"enable_process_check"`
-	Debug              bool `yaml:"debug"`
+	EnableProcessCheck   bool `yaml:"enable_process_check"`
+	Debug                bool `yaml:"debug"`
+	EnableRadioExercises bool `yaml:"enable_radio_exercises"`
 }
 
 // if setting file does not exits fallback to default setting.
@@ -182,6 +184,17 @@ func fetchLatestLogName(path string) (string, error) {
 	return latestLog, nil
 }
 
+func InTimeRange(start time.Time, end time.Time, target time.Time) bool {
+	// https://stackoverflow.com/questions/55093676/checking-if-current-time-is-in-a-given-interval-golang
+	if start.Before(end) {
+		return !target.Before(start) && !target.After(end)
+	}
+	if start.Equal(end) {
+		return target.Equal(start)
+	}
+	return !start.After(target) || !end.Before(target)
+}
+
 func checkMoveInstance(path string, latestLog string, startAt time.Time, loc *time.Location, wg *sync.WaitGroup) {
 	t, err := tail.TailFile(path+latestLog, tail.Config{
 		Follow:    true,
@@ -212,7 +225,26 @@ func checkMoveInstance(path string, latestLog string, startAt time.Time, loc *ti
 		if latestInstance == nInstance {
 			continue
 		}
-		fmt.Println("detected instance move")
+
+		if conf.EnableRadioExercises {
+			start, err := now.ParseInLocation(loc, "05:45")
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+
+			end, err := now.ParseInLocation(loc, "08:00")
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+
+			if InTimeRange(start, end, time.Now().In(loc)) {
+				continue
+			}
+		}
+
+		debugLog("detected instance move")
 		debugLog("latestInstance", latestInstance)
 
 		err = KillProcessByName("VRChat.exe")
@@ -256,7 +288,7 @@ func main() {
 
 	loc, err := time.LoadLocation(Location)
 	if err != nil {
-		loc = time.FixedZone(Location, 9*60*60)
+		time.Local = time.FixedZone(Location, 9*60*60)
 	}
 
 	path := home + vrcRelativeLogPath

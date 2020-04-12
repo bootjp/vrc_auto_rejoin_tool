@@ -2,10 +2,13 @@ package main
 
 import (
 	"fmt"
+
+	"github.com/jinzhu/now"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"reflect"
+	"runtime"
 	"testing"
 	"time"
 )
@@ -202,6 +205,9 @@ func TestMove(t *testing.T) {
 }
 
 func TestFindProcessByName(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		return
+	}
 	cmd := exec.Command("cmd", "/C", "timeout", "3")
 	err := cmd.Start()
 	if err != nil {
@@ -209,5 +215,70 @@ func TestFindProcessByName(t *testing.T) {
 	}
 	if exists, _ := findProcessByName("cmd.exe"); !exists {
 		t.Fatal("process not found")
+	}
+}
+
+func TestInTimeRange(t *testing.T) {
+	loc, err := time.LoadLocation(Location)
+	if err != nil {
+		loc = time.FixedZone(Location, 9*60*60)
+	}
+	tests := []struct {
+		start   string
+		end     string
+		check   string
+		inRange bool
+	}{
+		{"05:45", "08:00", "04:00", false},
+		{"05:45", "08:00", "23:30", false},
+		{"05:45", "08:00", "05:46", true},
+		{"05:45", "08:00", "06:00", true},
+		{"05:45", "08:00", "08:00", true},
+		{"05:45", "08:00", "03:00", false},
+	}
+	newLayout := "15:04"
+	for _, test := range tests {
+		check, _ := time.ParseInLocation(newLayout, test.check, loc)
+		start, _ := time.ParseInLocation(newLayout, test.start, loc)
+		end, _ := time.ParseInLocation(newLayout, test.end, loc)
+		if InTimeRange(start, end, check) != test.inRange {
+			t.Errorf("test is failed expect %v given %v", test.inRange, InTimeRange(start, end, check))
+		}
+	}
+
+}
+func TestTime(t *testing.T) {
+	loc, err := time.LoadLocation("local")
+	if err != nil {
+		loc = time.FixedZone(Location, 9*60*60)
+	}
+	tests := []struct {
+		check   string
+		inRange bool
+	}{
+		{"04:00", false},
+		{"23:30", false},
+		{"05:46", true},
+		{"06:00", true},
+		{"08:00", true},
+		{"03:00", false},
+	}
+
+	current := time.Now().In(loc)
+
+	for _, test := range tests {
+
+		start, _ := now.ParseInLocation(loc, "05:45")
+		end, _ := now.ParseInLocation(loc, "08:00")
+		check, _ := now.ParseInLocation(loc, test.check)
+
+		if check.Format("2006-01-02") != current.Format("2006-01-02") {
+			t.Errorf("test logic error. check date and current must be equal")
+		}
+
+		if InTimeRange(start, end, check) != test.inRange {
+			t.Errorf("check %v test is failed expect %v given %v", test.check,
+				test.inRange, InTimeRange(start, end, check))
+		}
 	}
 }

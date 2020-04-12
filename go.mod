@@ -8,6 +8,7 @@ require (
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/google/gops v0.3.7 // indirect
 	github.com/hpcloud/tail v1.0.0
+	github.com/jinzhu/now v1.1.1
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/keybase/go-ps v0.0.0-20190827175125-91aafc93ba19 // indirect
 	github.com/mitchellh/go-ps v1.0.0
