@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/faiface/beep"
+	"github.com/faiface/beep/speaker"
+	"github.com/faiface/beep/wav"
 	"github.com/jinzhu/now"
 	"github.com/mitchellh/go-ps"
 	"io/ioutil"
@@ -53,8 +56,37 @@ func moved(runAt time.Time, l string, loc *time.Location) (Instance, error) {
 }
 
 func launch(instance Instance) error {
+	if conf.EnableRejoinNotice {
+		playAudio("rejoin_notice.wav")
+		time.Sleep(1 * time.Minute)
+	}
 	cmd := command(instance)
 	return cmd.Run()
+}
+
+func playAudio(file string) {
+	f, err := os.Open(file)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	streamer, format, err := wav.Decode(f)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer streamer.Close()
+
+	err = speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	done := make(chan bool)
+	speaker.Play(beep.Seq(streamer, beep.Callback(func() {
+		done <- true
+	})))
+
+	<-done
 }
 
 var latestInstance Instance
@@ -121,6 +153,7 @@ type setting struct {
 	EnableProcessCheck   bool `yaml:"enable_process_check"`
 	Debug                bool `yaml:"debug"`
 	EnableRadioExercises bool `yaml:"enable_radio_exercises"`
+	EnableRejoinNotice   bool `yaml:"enable_rejoin_notice"`
 }
 
 // if setting file does not exits fallback to default setting.
@@ -275,6 +308,7 @@ func KillProcessByName(name string) error {
 }
 
 func main() {
+	playAudio("start.wav")
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 	home := UserHomeDir()
