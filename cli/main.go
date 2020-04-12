@@ -310,22 +310,21 @@ func KillProcessByName(name string) error {
 
 func main() {
 	conf = loadSetting()
-	playAudio("start.wav")
+	debugLog(conf)
+	go playAudio("start.wav")
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 	home := UserHomeDir()
+
 	runArgs, err := findProcessArgsByName("VRChat.exe")
 	if err != nil {
 		log.Println(err)
 	}
-
 	debugLog(runArgs)
 
 	if home == "" {
 		log.Fatal("home dir not detect.")
 	}
-
-	debugLog(conf)
 
 	loc, err := time.LoadLocation(Location)
 	if err != nil {
