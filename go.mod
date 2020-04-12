@@ -4,6 +4,10 @@ go 1.12
 
 require (
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
+	github.com/aerth/playwav v0.0.0-20170324024803-17dfe21a406f // indirect
+	github.com/cocoonlife/goalsa v0.0.0-20160812085113-b711ae6f3eff // indirect
+	github.com/cryptix/wav v0.0.0-20180415113528-8bdace674401
+	github.com/faiface/beep v1.0.2
 	github.com/fsnotify/fsnotify v1.4.7 // indirect
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/google/gops v0.3.7 // indirect
