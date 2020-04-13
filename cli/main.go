@@ -180,10 +180,10 @@ func debugLog(l ...interface{}) {
 }
 
 func loadLatestInstance(filepath string, location *time.Location) (Instance, error) {
-
 	content, err := ioutil.ReadFile(filepath)
 	if err != nil {
 		log.Println(err)
+		return Instance{}, err
 	}
 
 	return parseLatestInstance(string(content), location)
@@ -193,6 +193,7 @@ func fetchLatestLogName(path string) (string, error) {
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
 		log.Println(err)
+		return "", err
 	}
 
 	sort.Slice(files, func(i, j int) bool {
@@ -298,15 +299,13 @@ func KillProcessByName(name string) error {
 		if err != nil {
 			return err
 		}
-		err = p.Kill()
-		if err != nil {
-			return err
-		}
-		return nil
+		return p.Kill()
 	}
 
 	return nil
 }
+
+var runArgs string
 
 func main() {
 	conf = loadSetting()
@@ -316,12 +315,6 @@ func main() {
 	wg.Add(1)
 	home := UserHomeDir()
 
-	runArgs, err := findProcessArgsByName("VRChat.exe")
-	if err != nil {
-		log.Println(err)
-	}
-	debugLog(runArgs)
-
 	if home == "" {
 		log.Fatal("home dir not detect.")
 	}
@@ -330,6 +323,13 @@ func main() {
 	if err != nil {
 		time.Local = time.FixedZone(Location, 9*60*60)
 	}
+
+	runArgs, err = findProcessArgsByName("VRChat.exe")
+	if err != nil {
+		log.Println(err)
+	}
+	runArgs = strings.Replace(runArgs, `"`, ``, 2)
+	debugLog(runArgs)
 
 	path := home + vrcRelativeLogPath
 
@@ -371,50 +371,23 @@ func findProcessByName(name string) (bool, int) {
 	return false, -1
 }
 
-func findProcessArgsByName(n string) ([]string, error) {
-	if conf.Debug {
-
-		processes, err := process.Processes()
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		for _, p := range processes {
-			cmd, err := p.Cmdline()
-			if err != nil {
-				log.Println(err)
-			}
-
-			if strings.Contains(cmd, n) {
-				i := strings.Index(cmd, " ") + 1
-				if i < len(cmd) {
-					arg := cmd[i:]
-					fmt.Println(arg)
-				}
-				break
-			}
-		}
-	}
-
+func findProcessArgsByName(n string) (string, error) {
 	ok, pid := findProcessByName(n)
 	if !ok {
-		return nil, errors.New("process does not exits")
+		return "", errors.New("process does not exits")
 	}
 
 	p, err := process.NewProcess(int32(pid))
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return "", err
 	}
-	debug, _ := p.Cmdline()
-	debugLog(debug)
 
-	return p.CmdlineSlice()
+	return p.Cmdline()
 }
 
 func checkProcess(wg *sync.WaitGroup) {
 	for range time.Tick(10 * time.Second) {
-
 		debugLog("check process exits")
 		exists, _ := findProcessByName("VRChat.exe")
 		if !exists {
