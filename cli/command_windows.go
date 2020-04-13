@@ -7,5 +7,5 @@ import (
 )
 
 func command(instance Instance) *exec.Cmd {
-	return exec.Command(runArgs + instance.ID)
+	return exec.Command(runArgs + " " + instance.ID)
 }
