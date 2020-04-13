@@ -3,17 +3,12 @@
 package main
 
 import (
-	"os"
 	"os/exec"
-	"syscall"
 )
 
 func command(instance Instance) *exec.Cmd {
-	return &exec.Cmd{
-		Path:  os.Getenv("COMSPEC"),
-		Stdin: os.Stdin,
-		SysProcAttr: &syscall.SysProcAttr{
-			CmdLine: `/S /C start vrchat://launch?id=` + instance.ID,
-		},
-	}
+	params := strings.Split(runArgs, `VRChat.exe" `)
+	exe := strings.Join(params[:1], "") + `VRChat.exe`
+	exe = strings.Trim(exe, `"`)
+	return exec.Command(exe, strings.Split(strings.Join(params[1:], "")+` `+`vrchat://launch?id=`+instance.ID, ` `)...)
 }

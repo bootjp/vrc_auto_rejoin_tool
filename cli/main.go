@@ -58,7 +58,7 @@ func moved(runAt time.Time, l string, loc *time.Location) (Instance, error) {
 
 func launch(instance Instance) error {
 	cmd := command(instance)
-	return cmd.Run()
+	return cmd.Start()
 }
 
 func playAudio(file string) {
