@@ -9,6 +9,7 @@ import (
 	"github.com/faiface/beep/wav"
 	"github.com/jinzhu/now"
 	"github.com/mitchellh/go-ps"
+	"github.com/shirou/gopsutil/process"
 	"io/ioutil"
 	"log"
 	"os"
@@ -57,7 +58,7 @@ func moved(runAt time.Time, l string, loc *time.Location) (Instance, error) {
 
 func launch(instance Instance) error {
 	cmd := command(instance)
-	return cmd.Run()
+	return cmd.Start()
 }
 
 func playAudio(file string) {
@@ -159,8 +160,7 @@ func loadSetting() setting {
 		log.Println(err)
 		return setting{}
 	}
-
-	fmt.Printf("%s\n", file)
+	debugLog("%s\n", file)
 	t := setting{}
 	err = yaml.Unmarshal(file, &t)
 	if err != nil {
@@ -180,10 +180,10 @@ func debugLog(l ...interface{}) {
 }
 
 func loadLatestInstance(filepath string, location *time.Location) (Instance, error) {
-
 	content, err := ioutil.ReadFile(filepath)
 	if err != nil {
 		log.Println(err)
+		return Instance{}, err
 	}
 
 	return parseLatestInstance(string(content), location)
@@ -193,6 +193,7 @@ func fetchLatestLogName(path string) (string, error) {
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
 		log.Println(err)
+		return "", err
 	}
 
 	sort.Slice(files, func(i, j int) bool {
@@ -234,7 +235,7 @@ func checkMoveInstance(path string, latestLog string, startAt time.Time, loc *ti
 	if err != nil {
 		log.Println(err)
 	}
-	for true {
+	for {
 		msg, ok := <-t.Lines
 		if !ok {
 			continue
@@ -288,43 +289,47 @@ func checkMoveInstance(path string, latestLog string, startAt time.Time, loc *ti
 		if err := launch(latestInstance); err != nil {
 			log.Println(err)
 		}
+		time.Sleep(30 * time.Second)
 		wg.Done()
 		return
 	}
 }
 func KillProcessByName(name string) error {
 	if exits, pid := findProcessByName(name); exits {
-		process, err := os.FindProcess(pid)
+		p, err := os.FindProcess(pid)
 		if err != nil {
 			return err
 		}
-		err = process.Kill()
-		if err != nil {
-			return err
-		}
-		return nil
+		return p.Kill()
 	}
 
 	return nil
 }
 
+var runArgs string
+
 func main() {
-	playAudio("start.wav")
+	conf = loadSetting()
+	debugLog(conf)
+	go playAudio("start.wav")
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 	home := UserHomeDir()
+
 	if home == "" {
 		log.Fatal("home dir not detect.")
 	}
-
-	conf = loadSetting()
-
-	debugLog(conf)
 
 	loc, err := time.LoadLocation(Location)
 	if err != nil {
 		time.Local = time.FixedZone(Location, 9*60*60)
 	}
+
+	runArgs, err = findProcessArgsByName("VRChat.exe")
+	if err != nil {
+		log.Println(err)
+	}
+	debugLog(runArgs)
 
 	path := home + vrcRelativeLogPath
 
@@ -366,9 +371,23 @@ func findProcessByName(name string) (bool, int) {
 	return false, -1
 }
 
+func findProcessArgsByName(n string) (string, error) {
+	ok, pid := findProcessByName(n)
+	if !ok {
+		return "", errors.New("process does not exits")
+	}
+
+	p, err := process.NewProcess(int32(pid))
+	if err != nil {
+		log.Println(err)
+		return "", err
+	}
+
+	return p.Cmdline()
+}
+
 func checkProcess(wg *sync.WaitGroup) {
 	for range time.Tick(10 * time.Second) {
-
 		debugLog("check process exits")
 		exists, _ := findProcessByName("VRChat.exe")
 		if !exists {
@@ -381,6 +400,7 @@ func checkProcess(wg *sync.WaitGroup) {
 			if err != nil {
 				log.Println(err)
 			}
+			time.Sleep(30 * time.Second)
 			wg.Done()
 			return // throw checkProcess
 		}
