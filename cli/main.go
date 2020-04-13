@@ -289,6 +289,7 @@ func checkMoveInstance(path string, latestLog string, startAt time.Time, loc *ti
 		if err := launch(latestInstance); err != nil {
 			log.Println(err)
 		}
+		time.Sleep(30 * time.Second)
 		wg.Done()
 		return
 	}
@@ -400,6 +401,7 @@ func checkProcess(wg *sync.WaitGroup) {
 			if err != nil {
 				log.Println(err)
 			}
+			time.Sleep(30 * time.Second)
 			wg.Done()
 			return // throw checkProcess
 		}
