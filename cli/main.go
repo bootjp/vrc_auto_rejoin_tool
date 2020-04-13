@@ -328,6 +328,7 @@ func main() {
 	if err != nil {
 		log.Println(err)
 	}
+	runArgs = strings.Replace(runArgs, `"`, ``, 2)
 	debugLog(runArgs)
 
 	path := home + vrcRelativeLogPath
