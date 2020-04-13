@@ -4,6 +4,7 @@ package main
 
 import (
 	"os/exec"
+	"strings"
 )
 
 func command(instance Instance) *exec.Cmd {
