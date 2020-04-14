@@ -10,12 +10,14 @@ require (
 	github.com/faiface/beep v1.0.2
 	github.com/fsnotify/fsnotify v1.4.7 // indirect
 	github.com/go-ole/go-ole v1.2.4 // indirect
+	github.com/gofrs/flock v0.7.1
 	github.com/google/gops v0.3.7 // indirect
 	github.com/hpcloud/tail v1.0.0
 	github.com/jinzhu/now v1.1.1
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/keybase/go-ps v0.0.0-20190827175125-91aafc93ba19 // indirect
 	github.com/mitchellh/go-ps v1.0.0
+	github.com/moznion/go-setlock v1.3.0 // indirect
 	github.com/shirou/gopsutil v2.20.3+incompatible
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/stretchr/testify v1.4.0 // indirect
