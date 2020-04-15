@@ -328,7 +328,8 @@ func main() {
 	_, err := fileLock.TryLock()
 	if err != nil {
 		fmt.Println("vrc_auto_rejoin_tool がすでに起動しています．")
-		return
+		wg.Done()
+		os.Exit(1)
 	}
 	defer func() {
 		err = fileLock.Unlock()
