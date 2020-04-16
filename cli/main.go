@@ -4,13 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/faiface/beep"
-	"github.com/faiface/beep/speaker"
-	"github.com/faiface/beep/wav"
-	"github.com/gofrs/flock"
-	"github.com/jinzhu/now"
 	"github.com/mitchellh/go-ps"
-	"github.com/shirou/gopsutil/process"
 	"io/ioutil"
 	"log"
 	"os"
@@ -20,6 +14,13 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/faiface/beep"
+	"github.com/faiface/beep/speaker"
+	"github.com/faiface/beep/wav"
+	"github.com/gofrs/flock"
+	"github.com/jinzhu/now"
+	"github.com/shirou/gopsutil/process"
 
 	"github.com/hpcloud/tail"
 	yaml "gopkg.in/yaml.v2"
@@ -325,16 +326,19 @@ func main() {
 	lockFile := home + `\AppData\Local\Temp\` + lockfile
 	fileLock := flock.New(lockFile)
 
-	_, err := fileLock.TryLock()
-	if err != nil {
-		fmt.Println("vrc_auto_rejoin_tool がすでに起動しています．")
-		wg.Done()
-		os.Exit(1)
+	ok, err := fileLock.TryLock()
+	if err != nil || !ok {
+		log.Println("vrc_auto_rejoin_tool がすでに起動しています．")
 	}
+
 	defer func() {
-		err = fileLock.Unlock()
-		log.Println(err)
+		if err = fileLock.Unlock(); err != nil {
+			log.Println(err)
+		}
 	}()
+	if err = fileLock.Lock(); err != nil {
+		log.Fatal(err)
+	}
 
 	loc, err := time.LoadLocation(Location)
 	if err != nil {

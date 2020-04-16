@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 
-	"github.com/jinzhu/now"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -11,6 +10,8 @@ import (
 	"runtime"
 	"testing"
 	"time"
+
+	"github.com/jinzhu/now"
 )
 
 func TestParseLatestInstance(t *testing.T) {
@@ -18,6 +19,7 @@ func TestParseLatestInstance(t *testing.T) {
 	if err != nil {
 		loc = time.FixedZone(Location, 9*60*60)
 	}
+
 	t.Run("parse log latest instance", func(t *testing.T) {
 		lt, err := time.ParseInLocation("2006.01.02 15:04:05", "2019.08.18 21:02:38", loc)
 		if err != nil {
