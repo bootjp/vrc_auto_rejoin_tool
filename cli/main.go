@@ -4,12 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/faiface/beep"
-	"github.com/faiface/beep/speaker"
-	"github.com/faiface/beep/wav"
-	"github.com/jinzhu/now"
 	"github.com/mitchellh/go-ps"
-	"github.com/shirou/gopsutil/process"
 	"io/ioutil"
 	"log"
 	"os"
@@ -20,10 +15,18 @@ import (
 	"sync"
 	"time"
 
+	"github.com/faiface/beep"
+	"github.com/faiface/beep/speaker"
+	"github.com/faiface/beep/wav"
+	"github.com/gofrs/flock"
+	"github.com/jinzhu/now"
+	"github.com/shirou/gopsutil/process"
+
 	"github.com/hpcloud/tail"
 	yaml "gopkg.in/yaml.v2"
 )
 
+const lockfile = "vrc_auto_rejoin_tool.lock"
 const WorldLogPrefix = "[VRCFlowManagerVRC] Destination set: wrld_"
 const Location = "Local"
 const TimeFormat = "2006.01.02 15:04:05"
@@ -318,6 +321,23 @@ func main() {
 
 	if home == "" {
 		log.Fatal("home dir not detect.")
+	}
+
+	lockFile := home + `\AppData\Local\Temp\` + lockfile
+	fileLock := flock.New(lockFile)
+
+	ok, err := fileLock.TryLock()
+	if err != nil || !ok {
+		log.Println("vrc_auto_rejoin_tool がすでに起動しています．")
+	}
+
+	defer func() {
+		if err = fileLock.Unlock(); err != nil {
+			log.Println(err)
+		}
+	}()
+	if err = fileLock.Lock(); err != nil {
+		log.Fatal(err)
 	}
 
 	loc, err := time.LoadLocation(Location)
