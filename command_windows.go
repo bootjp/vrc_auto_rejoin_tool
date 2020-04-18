@@ -1,14 +1,15 @@
 // +build windows
 
-package main
+package test
 
 import (
+	"github.com/bootjp/vrc_auto_rejoin_tool/cli"
 	"os/exec"
 	"strings"
 )
 
 func command(instance Instance) *exec.Cmd {
-	params := strings.Split(runArgs, `VRChat.exe" `)
+	params := strings.Split(main.runArgs, `VRChat.exe" `)
 	exe := strings.Join(params[:1], "") + `VRChat.exe`
 	exe = strings.Trim(exe, `"`)
 	return exec.Command(exe, strings.Split(strings.Join(params[1:], "")+` `+`vrchat://launch?id=`+instance.ID, ` `)...)
