@@ -6,6 +6,6 @@ import (
 )
 
 func main() {
-	err := vrcajt.NewVRCAutoRejoinTool("").Run()
+	err := vrcajt.NewVRCAutoRejoinTool().Run()
 	log.Fatal(err)
 }

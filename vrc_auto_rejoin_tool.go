@@ -1,4 +1,4 @@
-package test
+package vrc_auto_rejoin_tool
 
 import (
 	"errors"
@@ -10,7 +10,8 @@ import (
 	"github.com/jinzhu/now"
 	"github.com/mitchellh/go-ps"
 	"github.com/shirou/gopsutil/process"
-	"gopkg.in/yaml.v2"
+	"runtime"
+
 	"io/ioutil"
 	"log"
 	"os"
@@ -26,11 +27,11 @@ const Location = "Local"
 const TimeFormat = "2006.01.02 15:04:05"
 const vrcRelativeLogPath = `\AppData\LocalLow\VRChat\VRChat\`
 
-func NewVRCAutoRejoinTool(home string) *VRCAutoRejoinTool {
+func NewVRCAutoRejoinTool() *VRCAutoRejoinTool {
+	conf := LoadConf("setting.yml")
+
 	return &VRCAutoRejoinTool{
-		NewDupRunLock(home + `\AppData\Local\Temp\` + lockfile),
-		&Setting{},
-		"",
+		conf,
 		"",
 		Instance{},
 		time.Local,
@@ -38,22 +39,30 @@ func NewVRCAutoRejoinTool(home string) *VRCAutoRejoinTool {
 }
 
 type VRCAutoRejoinTool struct {
-	DLock          *DupRunLock
 	Config         *Setting
 	Args           string
-	VRChatPath     string
 	LatestInstance Instance
 	loc            *time.Location
 }
 
+func (V *VRCAutoRejoinTool) getUserHome() string {
+	if runtime.GOOS == "windows" {
+		home := os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
+		if home == "" {
+			home = os.Getenv("USERPROFILE")
+		}
+		return home
+	}
+	return os.Getenv("HOME")
+}
+
 func (V *VRCAutoRejoinTool) Run() error {
 	home := V.getUserHome()
-
 	lock := NewDupRunLock(home + lockfile)
 	ok, err := lock.Try()
 	if err != nil || !ok {
 		log.Println("vrc_auto_rejoin_tool がすでに起動しています．")
-		log.Println("多重起動は誤作動の原因となるため，こちらのvrc_auto_rejoin_toolは動作を停止します．")
+		log.Println("多重起動は誤作動の原因となるため，このウィンドウのvrc_auto_rejoin_toolは動作を停止します．")
 	}
 
 	err = lock.Lock()
@@ -62,10 +71,6 @@ func (V *VRCAutoRejoinTool) Run() error {
 	}
 	defer lock.UnLock()
 	V.SetupTimeLocation()
-	err = V.LoadConf("setting.yml")
-	if err != nil {
-		log.Println(err)
-	}
 
 	go V.Play("start.wav")
 
@@ -118,28 +123,6 @@ func (V *VRCAutoRejoinTool) ParseLatestInstance(path string) (Instance, error) {
 
 	return V.parseLatestInstance(string(content))
 
-}
-
-func (V *VRCAutoRejoinTool) LoadConf(path string) error {
-	file, err := ioutil.ReadFile(path)
-	if err != nil {
-		log.Println(err)
-		//return Setting{}
-	}
-
-	t := Setting{}
-	err = yaml.Unmarshal(file, &t)
-	if err != nil {
-		log.Println(err)
-		//return Setting{}
-	}
-	V.Config = &t
-
-	return nil
-}
-
-func (V *VRCAutoRejoinTool) getUserHome() string {
-	panic("implement me")
 }
 
 var ErrProcessNotFound = errors.New("process not found")
@@ -201,9 +184,8 @@ type AutoRejoin interface {
 	Run() error
 	Rejoin(i Instance) (bool, error)
 	ParseLatestInstance(path string) (Instance, error)
-	LoadConf(path string) error
 	SetupTimeLocation()
-	Play(path string) error
+	Play(path string)
 
 	getUserHome() string
 	findProcessPIDByName(name string) (int32, error)
@@ -220,6 +202,7 @@ func (V *VRCAutoRejoinTool) SetupTimeLocation() {
 		V.loc = time.Local
 	}
 }
+
 func (V *VRCAutoRejoinTool) Play(path string) {
 	f, err := os.Open(path)
 	if err != nil {

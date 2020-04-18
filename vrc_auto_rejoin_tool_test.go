@@ -1,4 +1,4 @@
-package test
+package vrc_auto_rejoin_tool
 
 import (
 	"fmt"
@@ -36,7 +36,7 @@ func TestParseLatestInstance(t *testing.T) {
 			t.Error(err)
 		}
 
-		res, err := NewVRCAutoRejoinTool("").parseLatestInstance(string(content))
+		res, err := NewVRCAutoRejoinTool().parseLatestInstance(string(content))
 		if err != nil {
 			t.Log(err)
 		}
@@ -73,7 +73,7 @@ func TestParseLatestInstance(t *testing.T) {
 			t.Error(err)
 		}
 
-		res, err := NewVRCAutoRejoinTool("").parseLatestInstance(string(content))
+		res, err := NewVRCAutoRejoinTool().parseLatestInstance(string(content))
 		if err != nil {
 			t.Log(err)
 		}
@@ -142,7 +142,7 @@ func TestMove(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		got, err := NewVRCAutoRejoinTool("").moved(freeze, log)
+		got, err := NewVRCAutoRejoinTool().moved(freeze, log)
 		if err != nil {
 			t.Error(err)
 		}
@@ -159,7 +159,7 @@ func TestMove(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		_, err := NewVRCAutoRejoinTool("").moved(freeze, log)
+		_, err := NewVRCAutoRejoinTool().moved(freeze, log)
 		if err != ErrNotMoved {
 			t.FailNow()
 		}
@@ -175,7 +175,7 @@ func TestMove(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		got, err := NewVRCAutoRejoinTool("").moved(freeze, log)
+		got, err := NewVRCAutoRejoinTool().moved(freeze, log)
 		if err != nil {
 			t.Error(err)
 		}
@@ -192,7 +192,7 @@ func TestMove(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		got, err := NewVRCAutoRejoinTool("").moved(freeze, log)
+		got, err := NewVRCAutoRejoinTool().moved(freeze, log)
 		if err != nil {
 			t.Error(err)
 		}
@@ -214,7 +214,7 @@ func TestFindProcessByName(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := NewVRCAutoRejoinTool("").findProcessPIDByName("cmd.exe"); err != nil {
+	if _, err := NewVRCAutoRejoinTool().findProcessPIDByName("cmd.exe"); err != nil {
 		t.Fatal("process not found")
 	}
 }
@@ -243,8 +243,8 @@ func TestInTimeRange(t *testing.T) {
 		check, _ := time.ParseInLocation(newLayout, test.check, loc)
 		start, _ := time.ParseInLocation(newLayout, test.start, loc)
 		end, _ := time.ParseInLocation(newLayout, test.end, loc)
-		if NewVRCAutoRejoinTool("").inTimeRange(start, end, check) != test.inRange {
-			t.Errorf("test is failed expect %v given %v", test.inRange, NewVRCAutoRejoinTool("").inTimeRange(start, end, check))
+		if NewVRCAutoRejoinTool().inTimeRange(start, end, check) != test.inRange {
+			t.Errorf("test is failed expect %v given %v", test.inRange, NewVRCAutoRejoinTool().inTimeRange(start, end, check))
 		}
 	}
 
@@ -278,9 +278,9 @@ func TestTime(t *testing.T) {
 			t.Errorf("test logic error. check date and current must be equal")
 		}
 
-		if NewVRCAutoRejoinTool("").inTimeRange(start, end, check) != test.inRange {
+		if NewVRCAutoRejoinTool().inTimeRange(start, end, check) != test.inRange {
 			t.Errorf("check %v test is failed expect %v given %v", test.check,
-				test.inRange, NewVRCAutoRejoinTool("").inTimeRange(start, end, check))
+				test.inRange, NewVRCAutoRejoinTool().inTimeRange(start, end, check))
 		}
 	}
 }

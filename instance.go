@@ -1,4 +1,4 @@
-package test
+package vrc_auto_rejoin_tool
 
 import (
 	"bytes"
