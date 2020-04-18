@@ -163,15 +163,16 @@ func (V *VRCAutoRejoinTool) findProcessArgsByName(name string) (string, error) {
 }
 
 func (V *VRCAutoRejoinTool) killProcessByName(name string) error {
-	if pid, err := V.findProcessPIDByName(name); err != nil {
-		p, err := os.FindProcess(int(pid))
-		if err != nil {
-			return err
-		}
-		return p.Kill()
+	pid, err := V.findProcessPIDByName(name)
+	if err != nil {
+		return err
 	}
 
-	return ErrProcessNotFound
+	p, err := os.FindProcess(int(pid))
+	if err != nil {
+		return err
+	}
+	return p.Kill()
 }
 
 func (V *VRCAutoRejoinTool) inTimeRange(start time.Time, end time.Time, target time.Time) bool {
