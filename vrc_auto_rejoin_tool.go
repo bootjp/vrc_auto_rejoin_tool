@@ -10,6 +10,7 @@ import (
 	"github.com/jinzhu/now"
 	"github.com/mitchellh/go-ps"
 	"github.com/shirou/gopsutil/process"
+	"os/exec"
 	"runtime"
 
 	"io/ioutil"
@@ -109,9 +110,13 @@ func (V *VRCAutoRejoinTool) Run() error {
 	return nil
 }
 
-func (V *VRCAutoRejoinTool) Rejoin(i Instance) (bool, error) {
-	cmd := command(i)
-	return true, cmd.Start() // todo fix
+func (V *VRCAutoRejoinTool) Rejoin(i Instance) error {
+	params := strings.Split(V.Args, `VRChat.exe" `)
+	exe := strings.Join(params[:1], "") + `VRChat.exe`
+	exe = strings.Trim(exe, `"`)
+	cmd := exec.Command(exe, strings.Split(strings.Join(params[1:], "")+` `+`vrchat://launch?id=`+i.ID, ` `)...)
+
+	return cmd.Start()
 }
 
 func (V *VRCAutoRejoinTool) ParseLatestInstance(path string) (Instance, error) {
@@ -182,7 +187,7 @@ func (V *VRCAutoRejoinTool) inTimeRange(start time.Time, end time.Time, target t
 
 type AutoRejoin interface {
 	Run() error
-	Rejoin(i Instance) (bool, error)
+	Rejoin(i Instance) error
 	ParseLatestInstance(path string) (Instance, error)
 	SetupTimeLocation()
 	Play(path string)
@@ -294,7 +299,7 @@ func (V *VRCAutoRejoinTool) checkProcess(wg *sync.WaitGroup) {
 				V.Play("rejoin_notice.wav")
 				time.Sleep(1 * time.Minute)
 			}
-			_, err := V.Rejoin(V.LatestInstance)
+			err := V.Rejoin(V.LatestInstance)
 			if err != nil {
 				log.Println(err)
 			}
@@ -362,7 +367,7 @@ func (V *VRCAutoRejoinTool) checkMoveInstance(path string, latestLog string, at 
 		if err != nil {
 			log.Println(err)
 		}
-		if _, err := V.Rejoin(V.LatestInstance); err != nil {
+		if err := V.Rejoin(V.LatestInstance); err != nil {
 			log.Println(err)
 		}
 		time.Sleep(30 * time.Second)
