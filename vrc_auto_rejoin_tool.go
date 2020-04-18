@@ -59,7 +59,7 @@ func (V *VRCAutoRejoinTool) getUserHome() string {
 
 func (V *VRCAutoRejoinTool) Run() error {
 	home := V.getUserHome()
-	lock := NewDupRunLock(home + lockfile)
+	lock := NewDupRunLock(home + `\AppData\Local\Temp\` + lockfile)
 	ok, err := lock.Try()
 	if err != nil || !ok {
 		log.Println("vrc_auto_rejoin_tool がすでに起動しています．")
