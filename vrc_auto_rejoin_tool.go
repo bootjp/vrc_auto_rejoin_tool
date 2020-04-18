@@ -236,14 +236,6 @@ func (V *VRCAutoRejoinTool) Play(path string) {
 	<-done
 }
 
-//func (V *VRCAutoRejoinTool) parseLogTime(log string) (time.Time, error) {
-//	logTime, err := time.ParseInLocation(TimeFormat, log[:19], V.loc)
-//	if err != nil {
-//		return logTime, err
-//	}
-//	return logTime, nil
-//}
-
 func (V *VRCAutoRejoinTool) parseLatestInstance(s string) (Instance, error) {
 	latestInstance := Instance{}
 
