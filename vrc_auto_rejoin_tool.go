@@ -9,6 +9,7 @@ import (
 	"github.com/hpcloud/tail"
 	"github.com/jinzhu/now"
 	"github.com/mitchellh/go-ps"
+	"github.com/okzk/ticker"
 	"github.com/shirou/gopsutil/process"
 	"os/exec"
 	"runtime"
@@ -64,6 +65,7 @@ func (V *VRCAutoRejoinTool) Run() error {
 	if err != nil || !ok {
 		log.Println("vrc_auto_rejoin_tool がすでに起動しています．")
 		log.Println("多重起動は誤作動の原因となるため，このウィンドウのvrc_auto_rejoin_toolは動作を停止します．")
+		return err
 	}
 
 	err = lock.Lock()
@@ -285,7 +287,7 @@ func (V *VRCAutoRejoinTool) fetchLatestLogName(path string) (string, error) {
 }
 
 func (V *VRCAutoRejoinTool) checkProcess(wg *sync.WaitGroup) {
-	for range time.Tick(1 * time.Minute) {
+	_ = ticker.New(1*time.Minute, func(_ time.Time) {
 		_, err := V.findProcessPIDByName("VRChat.exe")
 		if err == ErrProcessNotFound {
 			if V.Config.EnableRejoinNotice {
@@ -300,7 +302,7 @@ func (V *VRCAutoRejoinTool) checkProcess(wg *sync.WaitGroup) {
 			wg.Done()
 			return
 		}
-	}
+	})
 }
 
 func (V *VRCAutoRejoinTool) checkMoveInstance(path string, latestLog string, at time.Time, wg *sync.WaitGroup) {
