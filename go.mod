@@ -13,6 +13,7 @@ require (
 	github.com/jinzhu/now v1.1.1
 	github.com/kr/pretty v0.2.0 // indirect
 	github.com/mitchellh/go-ps v1.0.0
+	github.com/okzk/ticker v0.0.0-20151130031507-5a63c2a83365
 	github.com/shirou/gopsutil v2.20.3+incompatible
 	github.com/stretchr/testify v1.4.0 // indirect
 	golang.org/x/sys v0.0.0-20200409092240-59c9f1ba88fa // indirect

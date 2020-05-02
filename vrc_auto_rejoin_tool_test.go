@@ -19,7 +19,7 @@ func TestParseLatestInstance(t *testing.T) {
 		loc = time.FixedZone(Location, 9*60*60)
 	}
 
-	t.Run("parse log latest instance", func(t *testing.T) {
+	t.Run("parse log latest inspectWorker", func(t *testing.T) {
 		lt, err := time.ParseInLocation("2006.01.02 15:04:05", "2019.08.18 21:02:38", loc)
 		if err != nil {
 			t.Error(err)
@@ -56,7 +56,7 @@ func TestParseLatestInstance(t *testing.T) {
 		}
 	})
 
-	t.Run("parse log latest instance in private", func(t *testing.T) {
+	t.Run("parse log latest inspectWorker in private", func(t *testing.T) {
 		lt, err := time.ParseInLocation("2006.01.02 15:04:05", "2019.08.24 13:30:14", loc)
 		if err != nil {
 			t.Error(err)

@@ -47,6 +47,21 @@ type VRCAutoRejoinTool struct {
 	loc            *time.Location
 }
 
+type AutoRejoin interface {
+	Run() error
+	Rejoin(i Instance) error
+	ParseLatestInstance(path string) (Instance, error)
+	SetupTimeLocation()
+	Play(path string)
+
+	inspectWorker(line chan *tail.Line, wg *sync.WaitGroup, at time.Time)
+	getUserHome() string
+	findProcessPIDByName(name string) (int32, error)
+	findProcessArgsByName(name string) (string, error)
+	killProcessByName(name string) error
+	inTimeRange(start time.Time, end time.Time, target time.Time) bool
+}
+
 func (V *VRCAutoRejoinTool) getUserHome() string {
 	if runtime.GOOS == "windows" {
 		home := os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
@@ -82,7 +97,7 @@ func (V *VRCAutoRejoinTool) Run() error {
 
 	V.Args, err = V.findProcessArgsByName("VRChat.exe")
 	if err != nil {
-		log.Println(err)
+		log.Fatalln(err)
 	}
 
 	path := home + vrcRelativeLogPath
@@ -102,11 +117,20 @@ func (V *VRCAutoRejoinTool) Run() error {
 	}
 
 	if V.Config.EnableProcessCheck {
-		go V.checkProcess(wg)
+		go V.checkProcessWorker(wg)
 	}
 
 	fmt.Println(path + latestLog)
-	go V.checkMoveInstance(path, latestLog, start, wg)
+	t, err := tail.TailFile(path+latestLog, tail.Config{
+		Follow:    true,
+		MustExist: true,
+		ReOpen:    true,
+		Poll:      true,
+	})
+	if err != nil {
+		log.Println(err)
+	}
+	go V.inspectWorker(t.Lines, wg, start)
 	wg.Wait()
 
 	return nil
@@ -186,20 +210,6 @@ func (V *VRCAutoRejoinTool) inTimeRange(start time.Time, end time.Time, target t
 		return target.Equal(start)
 	}
 	return !start.After(target) || !end.Before(target)
-}
-
-type AutoRejoin interface {
-	Run() error
-	Rejoin(i Instance) error
-	ParseLatestInstance(path string) (Instance, error)
-	SetupTimeLocation()
-	Play(path string)
-
-	getUserHome() string
-	findProcessPIDByName(name string) (int32, error)
-	findProcessArgsByName(name string) (string, error)
-	killProcessByName(name string) error
-	inTimeRange(start time.Time, end time.Time, target time.Time) bool
 }
 
 func (V *VRCAutoRejoinTool) SetupTimeLocation() {
@@ -286,7 +296,7 @@ func (V *VRCAutoRejoinTool) fetchLatestLogName(path string) (string, error) {
 	return latestLog, nil
 }
 
-func (V *VRCAutoRejoinTool) checkProcess(wg *sync.WaitGroup) {
+func (V *VRCAutoRejoinTool) checkProcessWorker(wg *sync.WaitGroup) {
 	_ = ticker.New(1*time.Minute, func(_ time.Time) {
 		_, err := V.findProcessPIDByName("VRChat.exe")
 		if err == ErrProcessNotFound {
@@ -305,22 +315,9 @@ func (V *VRCAutoRejoinTool) checkProcess(wg *sync.WaitGroup) {
 	})
 }
 
-func (V *VRCAutoRejoinTool) checkMoveInstance(path string, latestLog string, at time.Time, wg *sync.WaitGroup) {
-	t, err := tail.TailFile(path+latestLog, tail.Config{
-		Follow:    true,
-		MustExist: true,
-		ReOpen:    true,
-		Poll:      true,
-	})
-	if err != nil {
-		log.Println(err)
-	}
-	for {
-		msg, ok := <-t.Lines
-		if !ok {
-			continue
-		}
+func (V *VRCAutoRejoinTool) inspectWorker(line chan *tail.Line, wg *sync.WaitGroup, at time.Time) {
 
+	for msg := range line {
 		text := msg.Text
 		nInstance, err := V.moved(at, text)
 		if err == ErrNotMoved {
@@ -331,7 +328,7 @@ func (V *VRCAutoRejoinTool) checkMoveInstance(path string, latestLog string, at 
 			log.Println(err)
 		}
 
-		if V.LatestInstance == nInstance {
+		if V.LatestInstance.ID == nInstance.ID {
 			continue
 		}
 
