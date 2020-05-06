@@ -8,5 +8,7 @@ import (
 
 func main() {
 	err := vrcarjt.NewVRCAutoRejoinTool().Run()
-	log.Fatal(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
