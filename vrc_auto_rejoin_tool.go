@@ -38,6 +38,7 @@ func NewVRCAutoRejoinTool() *VRCAutoRejoinTool {
 		conf,
 		"",
 		Instance{},
+		!conf.EnableSleepDetector, // EnableSleepDetectorがOnのとき即座にインスタンス移動の検出をしないため
 	}
 }
 
@@ -46,6 +47,7 @@ type VRCAutoRejoinTool struct {
 	Config         *Setting
 	Args           string
 	LatestInstance Instance
+	EnableRejoin   bool
 }
 
 type AutoRejoin interface {
@@ -66,7 +68,6 @@ type AutoRejoin interface {
 
 func (v *VRCAutoRejoinTool) sleepInstanceDetector() Instance {
 	return Instance{}
-
 }
 
 func (v *VRCAutoRejoinTool) getUserHome() string {
@@ -109,9 +110,7 @@ func (v *VRCAutoRejoinTool) Run() error {
 	}
 
 	path := home + vrcRelativeLogPath
-
 	latestLog, err := v.fetchLatestLogName(path)
-
 	if err != nil {
 		return fmt.Errorf("log file not found. %s", err)
 	}
@@ -119,16 +118,50 @@ func (v *VRCAutoRejoinTool) Run() error {
 	start := time.Now().In(time.Local)
 	fmt.Println("RUNNING START AT", start.Format(TimeFormat))
 
+	// blocking this
+	for v.Config.EnableSleepDetector && !v.EnableRejoin {
+		//v.LatestInstance = v.sleepInstanceDetector()
+		t, err := tail.TailFile(path+latestLog, tail.Config{
+			Follow:    true,
+			MustExist: true,
+			ReOpen:    true,
+			Poll:      true,
+		})
+		if err != nil {
+			return err
+		}
+
+		for line := range t.Lines {
+			instance, err := v.moved(start, line.Text)
+			if err == ErrNotMoved {
+				continue
+			}
+
+			if err != nil {
+				log.Println(err)
+			}
+			var _ struct {
+				waitingWorld    bool
+				WorldID         string
+				startTime       time.Time
+				endTime         time.Time
+				waitingDuration time.Duration
+			}
+			for _, w := range v.Config.SleepWorld {
+				if strings.Contains(instance.ID, w) {
+
+				}
+			}
+
+			v.LatestInstance, err = v.ParseLatestInstance(path + latestLog)
+		}
+	}
+
 	v.LatestInstance, err = v.ParseLatestInstance(path + latestLog)
 	if err != nil {
-		log.Println(err)
+		return err
 	}
 
-	if v.Config.EnableProcessCheck {
-		go v.checkProcessWorker(wg)
-	}
-
-	fmt.Println(path + latestLog)
 	t, err := tail.TailFile(path+latestLog, tail.Config{
 		Follow:    true,
 		MustExist: true,
@@ -136,7 +169,10 @@ func (v *VRCAutoRejoinTool) Run() error {
 		Poll:      true,
 	})
 	if err != nil {
-		log.Println(err)
+		return err
+	}
+	if v.Config.EnableProcessCheck {
+		go v.checkProcessWorker(wg)
 	}
 	go v.inspectWorker(t.Lines, wg, start)
 	wg.Wait()
