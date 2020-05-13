@@ -37,7 +37,7 @@ func NewVRCAutoRejoinTool() *VRCAutoRejoinTool {
 	return &VRCAutoRejoinTool{
 		conf,
 		"",
-		nil,
+		Instance{},
 	}
 }
 
@@ -80,19 +80,20 @@ func (v *VRCAutoRejoinTool) getUserHome() string {
 	return os.Getenv("HOME")
 }
 
+var ErrDuplicateRun = errors.New("auto rejoin tool duplicate run error")
+
 func (v *VRCAutoRejoinTool) Run() error {
 	home := v.getUserHome()
 	lock := NewDupRunLock(home + `\AppData\Local\Temp\` + lockfile)
 	ok, err := lock.Try()
+
 	if err != nil || !ok {
-		log.Println("vrc_auto_rejoin_tool がすでに起動しています．")
-		log.Println("多重起動は誤作動の原因となるため，このウィンドウのvrc_auto_rejoin_toolは動作を停止します．")
-		return err
+		return ErrDuplicateRun
 	}
 
 	err = lock.Lock()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer lock.UnLock()
 	v.setupTimeLocation()
@@ -104,7 +105,7 @@ func (v *VRCAutoRejoinTool) Run() error {
 
 	v.Args, err = v.findProcessArgsByName("VRChat.exe")
 	if err != nil {
-		log.Fatalln(err)
+		return err
 	}
 
 	path := home + vrcRelativeLogPath
@@ -112,7 +113,7 @@ func (v *VRCAutoRejoinTool) Run() error {
 	latestLog, err := v.fetchLatestLogName(path)
 
 	if err != nil {
-		log.Fatalf("log file not found. %s", err)
+		return fmt.Errorf("log file not found. %s", err)
 	}
 
 	start := time.Now().In(time.Local)

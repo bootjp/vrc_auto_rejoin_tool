@@ -103,19 +103,20 @@ func TestParseLatestInstance(t *testing.T) {
 }
 
 func TestNewInstanceByLog(t *testing.T) {
-	loc, err := time.LoadLocation(Location)
+	var err error
+	time.Local, err = time.LoadLocation(Location)
 	if err != nil {
-		loc = time.FixedZone(Location, 9*60*60)
+		time.Local = time.FixedZone(Location, 9*60*60)
 	}
 
 	log := `2019.08.18 21:02:38 Log        -  [VRCFlowManagerVRC] Destination set: wrld_cc124ed6-acec-4d55-9866-54ab66af172d`
-	ti, err := time.ParseInLocation(TimeFormat, "2019.08.18 21:02:38", loc)
+	ti, err := time.ParseInLocation(TimeFormat, "2019.08.18 21:02:38", time.Local)
 
 	if err != nil {
 		t.Fatal(err)
 	}
 	expect := Instance{ID: "wrld_cc124ed6-acec-4d55-9866-54ab66af172d", Time: ti}
-	got, err := NewInstanceByLog(log, loc)
+	got, err := NewInstanceByLog(log)
 	if err != nil {
 		t.Error(err)
 	}
@@ -127,14 +128,15 @@ func TestNewInstanceByLog(t *testing.T) {
 }
 
 func TestMove(t *testing.T) {
-	loc, err := time.LoadLocation(Location)
+	var err error
+	time.Local, err = time.LoadLocation(Location)
 	if err != nil {
-		loc = time.FixedZone(Location, 9*60*60)
+		time.Local = time.FixedZone(Location, 9*60*60)
 	}
 
-	freeze := time.Date(2018, 1, 1, 0, 0, 0, 0, loc)
+	freeze := time.Date(2018, 1, 1, 0, 0, 0, 0, time.Local)
 
-	ti, err := time.ParseInLocation(TimeFormat, "2019.08.18 21:02:38", loc)
+	ti, err := time.ParseInLocation(TimeFormat, "2019.08.18 21:02:38", time.Local)
 	expect := Instance{ID: "wrld_cc124ed6-acec-4d55-9866-54ab66af172d", Time: ti}
 
 	t.Run("success case", func(t *testing.T) {
@@ -167,7 +169,7 @@ func TestMove(t *testing.T) {
 
 	t.Run("log has nonce", func(t *testing.T) {
 
-		ti, err := time.ParseInLocation(TimeFormat, "2019.08.18 21:48:39", loc)
+		ti, err := time.ParseInLocation(TimeFormat, "2019.08.18 21:48:39", time.Local)
 		expect := Instance{ID: "wrld_58260f57-0076-41d3-a617-c0d0bc8f3d6f:43710~private(usr_d97adcdc-718b-4361-9b75-2c97c0a4993d)~nonce(86CB2A7F4E4AC916CD5A1313F656863C1E80BD2ED63738EA789E2B4C25B48F39)", Time: ti}
 
 		log := `2019.08.18 21:48:39 Log        -  [VRCFlowManagerVRC] Destination set: wrld_58260f57-0076-41d3-a617-c0d0bc8f3d6f:43710~private(usr_d97adcdc-718b-4361-9b75-2c97c0a4993d)~nonce(86CB2A7F4E4AC916CD5A1313F656863C1E80BD2ED63738EA789E2B4C25B48F39)`
