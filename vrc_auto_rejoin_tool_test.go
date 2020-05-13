@@ -1,4 +1,4 @@
-package vrc_auto_rejoin_tool
+package vrcarjt
 
 import (
 	"fmt"
