@@ -3,9 +3,14 @@
 
 ## what is this?（これはなに？）
 
-VRChat may be returned to the home world due to connection problems, and automatically returns to the previous world.
+Due to internet issues VRChat may force users back to their Home World unintentionally. The use of this application can redirect user back to their previous World, which includes Invite+ and Invite only Sessions. This application is designed for VRChat Sleepers, which they could auto reconnect to the session they were sleeping in and not waking up alone in Home World.
 
-This tool will prevent you from sleeping alone in VRChat and being returned to the home world alone.
+The follow will trigger the Application to activate
+   Change of World or session
+   When VRChat.exe ended (only when [`enable_process_check: yes`] is active)
+
+English translation [@s_mitsune](https://twitter.com/s_mitsune).
+
 
 VR睡眠して朝起きるとホームに一人でいることを防ぎたくて作りました．
 
