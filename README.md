@@ -1,7 +1,7 @@
 # vrc_auto_rejoin_tool (VRChatでホームに戻されたときに自動で戻るやつ）
 
-![Go](https://github.com/bootjp/vrc_auto_rejoin_tool/workflows/Go/badge.svg)
 [![Maintainability](https://api.codeclimate.com/v1/badges/7de5421d1206094621d7/maintainability)](https://codeclimate.com/github/bootjp/vrc_auto_rejoin_tool/maintainability)
+![Go](https://github.com/bootjp/vrc_auto_rejoin_tool/workflows/Go/badge.svg)
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fbootjp%2Fvrc_auto_rejoin_tool.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fbootjp%2Fvrc_auto_rejoin_tool?ref=badge_shield)
 
 ## what is this?（これはなに？）
