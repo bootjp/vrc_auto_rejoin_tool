@@ -1,4 +1,4 @@
-package vrc_auto_rejoin_tool
+package vrcarjt
 
 import (
 	"bytes"
@@ -13,14 +13,14 @@ type Instance struct {
 	ID   string
 }
 
-func NewInstanceByLog(logs string, loc *time.Location) (Instance, error) {
-	r := regexp.MustCompile(`wrld_.+$`)
-
-	lt, err := parseLogTime(logs, loc)
+var worldRegexp = regexp.MustCompile(`wrld_.+$`)
+func NewInstanceByLog(logs string) (Instance, error) {
+	lt, err := parseLogTime(logs)
 	if err != nil {
 		log.Println(err)
+		return Instance{}, err
 	}
-	group := r.FindSubmatch([]byte(logs))
+	group := worldRegexp.FindSubmatch([]byte(logs))
 	if len(group) > 0 {
 		return Instance{ID: string(bytes.Trim(group[0], "\x00")), Time: lt}, nil
 	}
@@ -28,8 +28,8 @@ func NewInstanceByLog(logs string, loc *time.Location) (Instance, error) {
 	return Instance{}, errors.New("world log not found")
 }
 
-func parseLogTime(log string, loc *time.Location) (time.Time, error) {
-	logTime, err := time.ParseInLocation(TimeFormat, log[:19], loc)
+func parseLogTime(log string) (time.Time, error) {
+	logTime, err := time.ParseInLocation(TimeFormat, log[:19], time.Local)
 	if err != nil {
 		return logTime, err
 	}

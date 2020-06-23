@@ -1,4 +1,4 @@
-package vrc_auto_rejoin_tool
+package vrcarjt
 
 import (
 	"errors"
@@ -12,7 +12,7 @@ import (
 	"github.com/faiface/beep/wav"
 	"github.com/hpcloud/tail"
 	"github.com/jinzhu/now"
-	"github.com/mitchellh/go-ps"
+	gops "github.com/mitchellh/go-ps"
 	"github.com/okzk/ticker"
 	"github.com/shirou/gopsutil/process"
 
@@ -38,30 +38,36 @@ func NewVRCAutoRejoinTool() *VRCAutoRejoinTool {
 		conf,
 		"",
 		Instance{},
-		time.Local,
+		!conf.EnableSleepDetector, // EnableSleepDetectorがOnのとき即座にインスタンス移動の検出をしないため
 	}
 }
 
+// VRCAutoRejoinTool
 type VRCAutoRejoinTool struct {
 	Config         *Setting
 	Args           string
 	LatestInstance Instance
-	loc            *time.Location
+	EnableRejoin   bool
 }
 
 type AutoRejoin interface {
 	Run() error
-	Rejoin(i Instance) error
 	ParseLatestInstance(path string) (Instance, error)
-	SetupTimeLocation()
-	Play(path string)
 
+	sleepInstanceDetector() Instance
+	setupTimeLocation()
+	playAudioFile(path string)
+	rejoin(i Instance) error
 	inspectWorker(line chan *tail.Line, wg *sync.WaitGroup, at time.Time)
 	getUserHome() string
 	findProcessPIDByName(name string) (int32, error)
 	findProcessArgsByName(name string) (string, error)
 	killProcessByName(name string) error
 	inTimeRange(start time.Time, end time.Time, target time.Time) bool
+}
+
+func (v *VRCAutoRejoinTool) sleepInstanceDetector() Instance {
+	return Instance{}
 }
 
 func (v *VRCAutoRejoinTool) getUserHome() string {
@@ -75,54 +81,87 @@ func (v *VRCAutoRejoinTool) getUserHome() string {
 	return os.Getenv("HOME")
 }
 
+var ErrDuplicateRun = errors.New("auto rejoin tool duplicate run error")
+
 func (v *VRCAutoRejoinTool) Run() error {
 	home := v.getUserHome()
 	lock := NewDupRunLock(home + `\AppData\Local\Temp\` + lockfile)
 	ok, err := lock.Try()
+
 	if err != nil || !ok {
-		log.Println("vrc_auto_rejoin_tool がすでに起動しています．")
-		log.Println("多重起動は誤作動の原因となるため，このウィンドウのvrc_auto_rejoin_toolは動作を停止します．")
-		return err
+		return ErrDuplicateRun
 	}
 
 	err = lock.Lock()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer lock.UnLock()
-	v.SetupTimeLocation()
+	v.setupTimeLocation()
 
-	go v.Play("start.wav")
+	go v.playAudioFile("start.wav")
 
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 
 	v.Args, err = v.findProcessArgsByName("VRChat.exe")
 	if err != nil {
-		log.Fatalln(err)
+		return err
 	}
 
 	path := home + vrcRelativeLogPath
-
 	latestLog, err := v.fetchLatestLogName(path)
-
 	if err != nil {
-		log.Fatalf("log file not found. %s", err)
+		return fmt.Errorf("log file not found. %s", err)
 	}
 
-	start := time.Now().In(v.loc)
+	start := time.Now().In(time.Local)
 	fmt.Println("RUNNING START AT", start.Format(TimeFormat))
+
+	// blocking this
+	for v.Config.EnableSleepDetector && !v.EnableRejoin {
+		//v.LatestInstance = v.sleepInstanceDetector()
+		t, err := tail.TailFile(path+latestLog, tail.Config{
+			Follow:    true,
+			MustExist: true,
+			ReOpen:    true,
+			Poll:      true,
+		})
+		if err != nil {
+			return err
+		}
+
+		for line := range t.Lines {
+			instance, err := v.moved(start, line.Text)
+			if err == ErrNotMoved {
+				continue
+			}
+
+			if err != nil {
+				log.Println(err)
+			}
+			var _ struct {
+				waitingWorld    bool
+				WorldID         string
+				startTime       time.Time
+				endTime         time.Time
+				waitingDuration time.Duration
+			}
+			for _, w := range v.Config.SleepWorld {
+				if strings.Contains(instance.ID, w) {
+
+				}
+			}
+
+			v.LatestInstance, err = v.ParseLatestInstance(path + latestLog)
+		}
+	}
 
 	v.LatestInstance, err = v.ParseLatestInstance(path + latestLog)
 	if err != nil {
-		log.Println(err)
+		return err
 	}
 
-	if v.Config.EnableProcessCheck {
-		go v.checkProcessWorker(wg)
-	}
-
-	fmt.Println(path + latestLog)
 	t, err := tail.TailFile(path+latestLog, tail.Config{
 		Follow:    true,
 		MustExist: true,
@@ -130,7 +169,10 @@ func (v *VRCAutoRejoinTool) Run() error {
 		Poll:      true,
 	})
 	if err != nil {
-		log.Println(err)
+		return err
+	}
+	if v.Config.EnableProcessCheck {
+		go v.checkProcessWorker(wg)
 	}
 	go v.inspectWorker(t.Lines, wg, start)
 	wg.Wait()
@@ -138,7 +180,7 @@ func (v *VRCAutoRejoinTool) Run() error {
 	return nil
 }
 
-func (v *VRCAutoRejoinTool) Rejoin(i Instance) error {
+func (v *VRCAutoRejoinTool) rejoin(i Instance) error {
 	params := strings.Split(v.Args, `VRChat.exe" `)
 	exe := strings.Join(params[:1], "") + `VRChat.exe`
 	exe = strings.Trim(exe, `"`)
@@ -158,10 +200,11 @@ func (v *VRCAutoRejoinTool) ParseLatestInstance(path string) (Instance, error) {
 
 }
 
+// ErrProcessNotFound is an error that is returned when the target process could not be found
 var ErrProcessNotFound = errors.New("process not found")
 
 func (v *VRCAutoRejoinTool) findProcessPIDByName(name string) (int32, error) {
-	processes, err := ps.Processes()
+	processes, err := gops.Processes()
 	if err != nil {
 		return -1, err
 	}
@@ -214,16 +257,15 @@ func (v *VRCAutoRejoinTool) inTimeRange(start time.Time, end time.Time, target t
 	return !start.After(target) || !end.Before(target)
 }
 
-func (v *VRCAutoRejoinTool) SetupTimeLocation() {
+func (v *VRCAutoRejoinTool) setupTimeLocation() {
 	var err error
-	v.loc, err = time.LoadLocation(Location)
+	time.Local, err = time.LoadLocation(Location)
 	if err != nil {
 		time.Local = time.FixedZone(Location, 9*60*60)
-		v.loc = time.Local
 	}
 }
 
-func (v *VRCAutoRejoinTool) Play(path string) {
+func (v *VRCAutoRejoinTool) playAudioFile(path string) {
 	f, err := os.Open(path)
 	if err != nil {
 		log.Fatal(err)
@@ -248,6 +290,7 @@ func (v *VRCAutoRejoinTool) Play(path string) {
 	})))
 
 	<-done
+
 }
 
 func (v *VRCAutoRejoinTool) parseLatestInstance(s string) (Instance, error) {
@@ -263,9 +306,10 @@ func (v *VRCAutoRejoinTool) parseLatestInstance(s string) (Instance, error) {
 
 		if !strings.Contains(line, WorldLogPrefix) {
 			continue
+
 		}
 
-		instance, err := NewInstanceByLog(line, v.loc)
+		instance, err := NewInstanceByLog(line)
 		if err != nil {
 			return instance, err
 		}
@@ -303,10 +347,10 @@ func (v *VRCAutoRejoinTool) checkProcessWorker(wg *sync.WaitGroup) {
 		_, err := v.findProcessPIDByName("VRChat.exe")
 		if err == ErrProcessNotFound {
 			if v.Config.EnableRejoinNotice {
-				v.Play("rejoin_notice.wav")
+				v.playAudioFile("rejoin_notice.wav")
 				time.Sleep(1 * time.Minute)
 			}
-			err := v.Rejoin(v.LatestInstance)
+			err := v.rejoin(v.LatestInstance)
 			if err != nil {
 				log.Println(err)
 			}
@@ -336,25 +380,25 @@ func (v *VRCAutoRejoinTool) inspectWorker(line chan *tail.Line, wg *sync.WaitGro
 		}
 
 		if v.Config.EnableRadioExercises {
-			start, err := now.ParseInLocation(v.loc, "05:45")
+			start, err := now.ParseInLocation(time.Local, "05:45")
 			if err != nil {
 				log.Println(err)
 				continue
 			}
 
-			end, err := now.ParseInLocation(v.loc, "08:00")
+			end, err := now.ParseInLocation(time.Local, "08:00")
 			if err != nil {
 				log.Println(err)
 				continue
 			}
 
-			if v.inTimeRange(start, end, time.Now().In(v.loc)) {
+			if v.inTimeRange(start, end, time.Now().In(time.Local)) {
 				continue
 			}
 		}
 
 		if v.Config.EnableRejoinNotice {
-			v.Play("rejoin_notice.wav")
+			v.playAudioFile("rejoin_notice.wav")
 			time.Sleep(1 * time.Minute)
 		}
 
@@ -362,7 +406,7 @@ func (v *VRCAutoRejoinTool) inspectWorker(line chan *tail.Line, wg *sync.WaitGro
 		if err != nil {
 			log.Println(err)
 		}
-		if err := v.Rejoin(v.LatestInstance); err != nil {
+		if err := v.rejoin(v.LatestInstance); err != nil {
 			log.Println(err)
 		}
 		time.Sleep(30 * time.Second)
@@ -371,6 +415,7 @@ func (v *VRCAutoRejoinTool) inspectWorker(line chan *tail.Line, wg *sync.WaitGro
 	}
 }
 
+// ErrNotMoved is Error when a move cannot be detected in the log
 var ErrNotMoved = errors.New("not moved")
 
 func (v *VRCAutoRejoinTool) moved(at time.Time, l string) (Instance, error) {
@@ -382,7 +427,7 @@ func (v *VRCAutoRejoinTool) moved(at time.Time, l string) (Instance, error) {
 		return Instance{}, ErrNotMoved
 	}
 
-	i, err := NewInstanceByLog(l, v.loc)
+	i, err := NewInstanceByLog(l)
 	if err != nil {
 		return i, ErrNotMoved
 	}
