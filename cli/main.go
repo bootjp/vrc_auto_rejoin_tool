@@ -1,5 +1,3 @@
-//Go source to generate custom bundled-fonts.go
-//Replace...)\fyne-io\fyne\theme\bundled-fonts.go by the generated file
 package main
 
 import (
