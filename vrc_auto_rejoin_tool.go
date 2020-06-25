@@ -35,10 +35,12 @@ func NewVRCAutoRejoinTool() *VRCAutoRejoinTool {
 	conf := LoadConf("setting.yml")
 
 	return &VRCAutoRejoinTool{
-		conf,
-		"",
-		Instance{},
-		!conf.EnableSleepDetector, // EnableSleepDetectorがOnのとき即座にインスタンス移動の検出をしないため
+		Config:         conf,
+		Args:           "",
+		LatestInstance: Instance{},
+		EnableRejoin:   !conf.EnableSleepDetector, // EnableSleepDetectorがOnのとき即座にインスタンス移動の検出をしないため
+		InSleep:        false,
+		lock:           &sync.Mutex{},
 	}
 }
 
@@ -48,11 +50,15 @@ type VRCAutoRejoinTool struct {
 	Args           string
 	LatestInstance Instance
 	EnableRejoin   bool
+	InSleep        bool
+	lock           *sync.Mutex
 }
 
 type AutoRejoin interface {
 	Run() error
 	ParseLatestInstance(path string) (Instance, error)
+	SleepStart()
+	Quit() error
 
 	sleepInstanceDetector() Instance
 	setupTimeLocation()
@@ -64,6 +70,16 @@ type AutoRejoin interface {
 	findProcessArgsByName(name string) (string, error)
 	killProcessByName(name string) error
 	inTimeRange(start time.Time, end time.Time, target time.Time) bool
+}
+
+func (v *VRCAutoRejoinTool) SleepStart() {
+	v.lock.Lock()
+	defer v.lock.Unlock()
+	v.InSleep = true
+}
+
+func (v *VRCAutoRejoinTool) Quit() error {
+	return nil
 }
 
 func (v *VRCAutoRejoinTool) sleepInstanceDetector() Instance {
@@ -119,8 +135,7 @@ func (v *VRCAutoRejoinTool) Run() error {
 	fmt.Println("RUNNING START AT", start.Format(TimeFormat))
 
 	// blocking this
-	for v.Config.EnableSleepDetector && !v.EnableRejoin {
-		//v.LatestInstance = v.sleepInstanceDetector()
+	for v.Config.EnableSleepDetector && !v.InSleep {
 		t, err := tail.TailFile(path+latestLog, tail.Config{
 			Follow:    true,
 			MustExist: true,
@@ -136,24 +151,24 @@ func (v *VRCAutoRejoinTool) Run() error {
 			if err == ErrNotMoved {
 				continue
 			}
-
 			if err != nil {
 				log.Println(err)
 			}
-			var _ struct {
-				waitingWorld    bool
-				WorldID         string
-				startTime       time.Time
-				endTime         time.Time
-				waitingDuration time.Duration
-			}
-			for _, w := range v.Config.SleepWorld {
-				if strings.Contains(instance.ID, w) {
+			v.LatestInstance = instance
 
-				}
-			}
-
-			v.LatestInstance, err = v.ParseLatestInstance(path + latestLog)
+			// for sleep detector.
+			//var _ struct {
+			//	waitingWorld    bool
+			//	WorldID         string
+			//	startTime       time.Time
+			//	endTime         time.Time
+			//	waitingDuration time.Duration
+			//}
+			//for _, w := range v.Config.SleepWorld {
+			//	if strings.Contains(instance.ID, w) {
+			//
+			//	}
+			//}
 		}
 	}
 
