@@ -1,11 +1,10 @@
 package main
 
 import (
+	"log"
 	"net/url"
 
 	vrcarjt "github.com/bootjp/vrc_auto_rejoin_tool"
-
-	"fyne.io/fyne/theme"
 
 	"fyne.io/fyne"
 	"fyne.io/fyne/canvas"
@@ -16,8 +15,6 @@ import (
 )
 
 var logo = canvas.NewImageFromFile("./logo.png")
-
-//logo.SetMinSize(fyne.NewSize(300, 300))
 
 func parseURL(urlStr string) *url.URL {
 	link, err := url.Parse(urlStr)
@@ -53,10 +50,12 @@ func welcomeScreen(a fyne.App, v vrcarjt.AutoRejoin) fyne.CanvasObject {
 		widget.NewGroup("Controls",
 			fyne.NewContainerWithLayout(layout.NewGridLayout(2),
 				widget.NewButton("Start Sleep this instance", func() {
-					//a.Settings().SetTheme(theme.DarkTheme())
+					v.SleepStart()
 				}),
 				widget.NewButton("Stop Tool", func() {
-					//a.Settings().SetTheme(theme.LightTheme())
+					if err := v.Quit(); err != nil {
+						log.Println(err)
+					}
 				}),
 			),
 		),
@@ -72,10 +71,10 @@ func settingScreen(a fyne.App, vrc *vrcarjt.VRCAutoRejoinTool) fyne.CanvasObject
 		widget.NewGroup("",
 			fyne.NewContainerWithLayout(layout.NewGridLayout(2),
 				widget.NewButton("Save", func() {
-					a.Settings().SetTheme(theme.DarkTheme())
+					//vrc.
 				}),
-				widget.NewButton("Load setting", func() {
-					a.Settings().SetTheme(theme.DarkTheme())
+				widget.NewButton("Load Setting", func() {
+
 				}),
 			),
 		),
