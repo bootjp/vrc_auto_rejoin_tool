@@ -150,8 +150,7 @@ func (v *VRCAutoRejoinTool) Run() error {
 		return err
 	}
 
-	go v.playAudioFile("start.wav")
-
+	v.playAudioFile("start.wav")
 	v.wait.Add(1)
 
 	path := home + vrcRelativeLogPath
@@ -164,42 +163,42 @@ func (v *VRCAutoRejoinTool) Run() error {
 	fmt.Println("RUNNING START AT", start.Format(TimeFormat))
 
 	// blocking this
-	for v.Config.EnableSleepDetector && !v.InSleep {
-		t, err := tail.TailFile(path+latestLog, tail.Config{
-			Follow:    true,
-			MustExist: true,
-			ReOpen:    true,
-			Poll:      true,
-		})
-		if err != nil {
-			return err
-		}
-
-		for line := range t.Lines {
-			instance, err := v.moved(start, line.Text)
-			if err == ErrNotMoved {
-				continue
-			}
-			if err != nil {
-				log.Println(err)
-			}
-			v.LatestInstance = instance
-
-			// for sleep detector.
-			//var _ struct {
-			//	waitingWorld    bool
-			//	WorldID         string
-			//	startTime       time.Time
-			//	endTime         time.Time
-			//	waitingDuration time.Duration
-			//}
-			//for _, w := range v.Config.SleepWorld {
-			//	if strings.Contains(instance.ID, w) {
-			//
-			//	}
-			//}
-		}
-	}
+	//for v.Config.EnableSleepDetector && !v.InSleep {
+	//	t, err := tail.TailFile(path+latestLog, tail.Config{
+	//		Follow:    true,
+	//		MustExist: true,
+	//		ReOpen:    true,
+	//		Poll:      true,
+	//	})
+	//	if err != nil {
+	//		return err
+	//	}
+	//
+	//	for line := range t.Lines {
+	//		instance, err := v.moved(start, line.Text)
+	//		if err == ErrNotMoved {
+	//			continue
+	//		}
+	//		if err != nil {
+	//			log.Println(err)
+	//		}
+	//		v.LatestInstance = instance
+	//
+	//		// for sleep detector.
+	//		//var _ struct {
+	//		//	waitingWorld    bool
+	//		//	WorldID         string
+	//		//	startTime       time.Time
+	//		//	endTime         time.Time
+	//		//	waitingDuration time.Duration
+	//		//}
+	//		//for _, w := range v.Config.SleepWorld {
+	//		//	if strings.Contains(instance.ID, w) {
+	//		//
+	//		//	}
+	//		//}
+	//	}
+	//}
 
 	v.LatestInstance, err = v.ParseLatestInstance(path + latestLog)
 	if err != nil {
@@ -219,7 +218,6 @@ func (v *VRCAutoRejoinTool) Run() error {
 		go v.checkProcessWorker(v.wait)
 	}
 	go v.inspectWorker(t.Lines, v.wait, start)
-	v.wait.Wait()
 
 	return nil
 }
