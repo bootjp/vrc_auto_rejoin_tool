@@ -42,6 +42,7 @@ func NewVRCAutoRejoinTool() *VRCAutoRejoinTool {
 		InSleep:        false,
 		lock:           &sync.Mutex{},
 		wait:           &sync.WaitGroup{},
+		running:        false,
 	}
 }
 
@@ -54,10 +55,12 @@ type VRCAutoRejoinTool struct {
 	InSleep        bool
 	lock           *sync.Mutex
 	wait           *sync.WaitGroup
+	running        bool
 }
 
 type AutoRejoin interface {
 	Run() error
+	IsRun() bool
 	ParseLatestInstance(path string) (Instance, error)
 	SleepStart()
 	Stop() error
@@ -74,6 +77,12 @@ type AutoRejoin interface {
 	inTimeRange(start time.Time, end time.Time, target time.Time) bool
 }
 
+func (v *VRCAutoRejoinTool) IsRun() bool {
+	v.lock.Lock()
+	defer v.lock.Unlock()
+	return v.running
+}
+
 func (v *VRCAutoRejoinTool) SleepStart() {
 	v.lock.Lock()
 	defer v.lock.Unlock()
@@ -81,6 +90,9 @@ func (v *VRCAutoRejoinTool) SleepStart() {
 }
 
 func (v *VRCAutoRejoinTool) Stop() error {
+	if !v.running {
+		return nil
+	}
 	v.lock.Lock()
 	defer v.lock.Unlock()
 	if v.Config.EnableProcessCheck {
@@ -121,6 +133,9 @@ func (v *VRCAutoRejoinTool) Run() error {
 	if err != nil {
 		return err
 	}
+	v.lock.Lock()
+	v.running = true
+	v.lock.Unlock()
 	defer lock.UnLock()
 	v.setupTimeLocation()
 
