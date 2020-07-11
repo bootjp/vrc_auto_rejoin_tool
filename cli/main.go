@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fyne.io/fyne/dialog"
 	"log"
 	"net/url"
 
@@ -43,17 +44,29 @@ func help(a fyne.App, vrc *vrcarjt.VRCAutoRejoinTool) fyne.CanvasObject {
 	)
 }
 
-func welcomeScreen(a fyne.App, v vrcarjt.AutoRejoin) fyne.CanvasObject {
+func welcomeScreen(a fyne.App, v vrcarjt.AutoRejoin, w fyne.Window) fyne.CanvasObject {
+	logo.SetMinSize(fyne.NewSize(250, 250))
 	return widget.NewVBox(
-		layout.NewSpacer(),
 
+		layout.NewSpacer(),
+		widget.NewHBox(layout.NewSpacer(), logo, layout.NewSpacer()),
+		widget.NewHBox(layout.NewSpacer(),
+			widget.NewHyperlink("BOOTH", parseURL("https://bootjp.booth.pm/items/1542381")),
+			widget.NewLabel("-"),
+			widget.NewHyperlink("GitHub", parseURL("https://github.com/bootjp/vrc_auto_rejoin_tool")),
+			layout.NewSpacer(),
+		),
+
+		fyne.NewContainerWithLayout(layout.NewCenterLayout(),
+			widget.NewTextGridFromString("version: v.X.X.X"),
+		),
 		widget.NewGroup("Controls",
 			fyne.NewContainerWithLayout(layout.NewGridLayout(2),
 				widget.NewButton("Start Sleep this instance", func() {
 					v.SleepStart()
 				}),
 				widget.NewButton("Stop Tool", func() {
-					if err := v.Quit(); err != nil {
+					if err := v.Stop(); err != nil {
 						log.Println(err)
 					}
 				}),
@@ -63,18 +76,42 @@ func welcomeScreen(a fyne.App, v vrcarjt.AutoRejoin) fyne.CanvasObject {
 
 }
 
-func settingScreen(a fyne.App, vrc *vrcarjt.VRCAutoRejoinTool) fyne.CanvasObject {
+func settingScreen(a fyne.App, vrc *vrcarjt.VRCAutoRejoinTool, w fyne.Window) fyne.CanvasObject {
 
+	pcheck := widget.NewCheck("enable_process_check", func(value bool) {
+		log.Println("Check set to", value)
+	})
+	debug := widget.NewCheck("debug", func(value bool) {
+		log.Println("Check set to", value)
+	})
+	radioex := widget.NewCheck("enable_radio_exercises", func(value bool) {
+		log.Println("Check set to", value)
+	})
+	// enable_rejoin_notice
+	notice := widget.NewCheck("enable_rejoin_notice", func(value bool) {
+		log.Println("Check set to", value)
+	})
+	var (
+		selectedfiles fyne.URIReadCloser
+		fileerror     error
+	)
 	return widget.NewVBox(
 		layout.NewSpacer(),
-		widget.NewHBox(layout.NewSpacer()),
+		widget.NewHBox(pcheck),
+		widget.NewHBox(debug),
+		widget.NewHBox(radioex),
+		widget.NewHBox(notice),
+		layout.NewSpacer(),
 		widget.NewGroup("",
 			fyne.NewContainerWithLayout(layout.NewGridLayout(2),
 				widget.NewButton("Save", func() {
-					//vrc.
+					//v.SaveSetting()
 				}),
 				widget.NewButton("Load Setting", func() {
-
+					dialog.ShowFileOpen(func(file fyne.URIReadCloser, err error) {
+						selectedfiles = file
+						err = fileerror
+					}, w)
 				}),
 			),
 		),
@@ -88,19 +125,13 @@ func main() {
 	a := app.NewWithID("vrc_auto_rejoin_tool")
 	a.SetIcon(logo.Resource)
 
-	tabs := widget.NewTabContainer(
-		widget.NewTabItemWithIcon("Control", logo.Resource, welcomeScreen(a, vrc)),
-		widget.NewTabItemWithIcon("Setting", logo.Resource, settingScreen(a, vrc)),
-		widget.NewTabItemWithIcon("About", logo.Resource, help(a, vrc)),
-	)
-
-	//if err := vrc.Run(); err != nil {
-	//	log.Fatal(err)
-	//}
-
 	w := a.NewWindow("VRC AutoRejoinTool")
+	tabs := widget.NewTabContainer(
+		widget.NewTabItemWithIcon("Control", logo.Resource, welcomeScreen(a, vrc, w)),
+		//widget.NewTabItemWithIcon("Setting", logo.Resource, settingScreen(a, vrc, w)),
+	)
+	w.Resize(fyne.NewSize(400, 400))
 	w.SetContent(tabs)
-
 	w.ShowAndRun()
 
 }
