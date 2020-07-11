@@ -41,6 +41,7 @@ func NewVRCAutoRejoinTool() *VRCAutoRejoinTool {
 		EnableRejoin:   !conf.EnableSleepDetector, // EnableSleepDetectorがOnのとき即座にインスタンス移動の検出をしないため
 		InSleep:        false,
 		lock:           &sync.Mutex{},
+		wait:           &sync.WaitGroup{},
 	}
 }
 
@@ -52,13 +53,14 @@ type VRCAutoRejoinTool struct {
 	EnableRejoin   bool
 	InSleep        bool
 	lock           *sync.Mutex
+	wait           *sync.WaitGroup
 }
 
 type AutoRejoin interface {
 	Run() error
 	ParseLatestInstance(path string) (Instance, error)
 	SleepStart()
-	Quit() error
+	Stop() error
 
 	sleepInstanceDetector() Instance
 	setupTimeLocation()
@@ -78,7 +80,14 @@ func (v *VRCAutoRejoinTool) SleepStart() {
 	v.InSleep = true
 }
 
-func (v *VRCAutoRejoinTool) Quit() error {
+func (v *VRCAutoRejoinTool) Stop() error {
+	v.lock.Lock()
+	defer v.lock.Unlock()
+	if v.Config.EnableProcessCheck {
+		v.wait.Done()
+	}
+	v.wait.Done()
+
 	return nil
 }
 
@@ -117,8 +126,7 @@ func (v *VRCAutoRejoinTool) Run() error {
 
 	go v.playAudioFile("start.wav")
 
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
+	v.wait.Add(1)
 
 	v.Args, err = v.findProcessArgsByName("VRChat.exe")
 	if err != nil {
@@ -187,10 +195,10 @@ func (v *VRCAutoRejoinTool) Run() error {
 		return err
 	}
 	if v.Config.EnableProcessCheck {
-		go v.checkProcessWorker(wg)
+		go v.checkProcessWorker(v.wait)
 	}
-	go v.inspectWorker(t.Lines, wg, start)
-	wg.Wait()
+	go v.inspectWorker(t.Lines, v.wait, start)
+	v.wait.Wait()
 
 	return nil
 }
