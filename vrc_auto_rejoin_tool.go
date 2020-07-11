@@ -141,14 +141,18 @@ func (v *VRCAutoRejoinTool) Run() error {
 	defer lock.UnLock()
 	v.setupTimeLocation()
 
-	go v.playAudioFile("start.wav")
-
-	v.wait.Add(1)
-
 	v.Args, err = v.findProcessArgsByName("VRChat.exe")
+	if err == ErrProcessNotFound {
+		v.playAudioFile("start_vrc.wav")
+		return nil
+	}
 	if err != nil {
 		return err
 	}
+
+	go v.playAudioFile("start.wav")
+
+	v.wait.Add(1)
 
 	path := home + vrcRelativeLogPath
 	latestLog, err := v.fetchLatestLogName(path)
