@@ -95,6 +95,9 @@ func settingScreen(a fyne.App, vrc *vrcarjt.VRCAutoRejoinTool, w fyne.Window) fy
 		selectedfiles fyne.URIReadCloser
 		fileerror     error
 	)
+	// Avoidance of errors until the release of the configuration screen
+	_ = fileerror
+	_ = selectedfiles
 	return widget.NewVBox(
 		layout.NewSpacer(),
 		widget.NewHBox(pcheck),
