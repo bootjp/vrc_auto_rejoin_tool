@@ -62,17 +62,22 @@ func welcomeScreen(a fyne.App, v vrcarjt.AutoRejoin, w fyne.Window) fyne.CanvasO
 		),
 		widget.NewGroup("Controls",
 			fyne.NewContainerWithLayout(layout.NewGridLayout(2),
-				widget.NewButton("Start Sleep this instance", func() {
+				widget.NewButton("Start", func() {
+					if v.IsRun() {
+						return
+					}
 					if err := v.Run(); err != nil {
 						fyne.LogError(err.Error(), err)
+						a.Quit()
 					}
 				}),
-				widget.NewButton("Stop Tool", func() {
+				widget.NewButton("Stop", func() {
 					if !v.IsRun() {
 						return
 					}
 					if err := v.Stop(); err != nil {
 						fyne.LogError(err.Error(), err)
+						a.Quit()
 					}
 				}),
 			),

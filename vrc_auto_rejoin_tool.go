@@ -95,6 +95,7 @@ func (v *VRCAutoRejoinTool) Stop() error {
 	}
 	v.lock.Lock()
 	defer v.lock.Unlock()
+	v.playAudioFile("stop.wav")
 	if v.Config.EnableProcessCheck {
 		v.wait.Done()
 	}
