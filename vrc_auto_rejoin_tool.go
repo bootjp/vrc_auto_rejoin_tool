@@ -99,6 +99,7 @@ func (v *VRCAutoRejoinTool) Stop() error {
 		v.wait.Done()
 	}
 	v.wait.Done()
+	v.running = false
 
 	return nil
 }
