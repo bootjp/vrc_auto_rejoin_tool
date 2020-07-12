@@ -128,16 +128,18 @@ func (v *VRCAutoRejoinTool) Run() error {
 	ok, err := lock.Try()
 
 	if err != nil || !ok {
+		v.lock.Lock()
+		v.running = false
+		v.lock.Unlock()
 		return ErrDuplicateRun
 	}
 
 	if err = lock.Lock(); err != nil {
+		v.lock.Lock()
+		v.running = false
+		v.lock.Unlock()
 		return err
 	}
-
-	v.lock.Lock()
-	v.running = true
-	v.lock.Unlock()
 
 	defer lock.UnLock()
 	v.setupTimeLocation()
@@ -156,6 +158,10 @@ func (v *VRCAutoRejoinTool) Run() error {
 		v.lock.Unlock()
 		return err
 	}
+
+	v.lock.Lock()
+	v.running = true
+	v.lock.Unlock()
 
 	v.playAudioFile("start.wav")
 	v.wait.Add(1)

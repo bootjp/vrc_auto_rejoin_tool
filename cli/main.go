@@ -68,7 +68,7 @@ func welcomeScreen(a fyne.App, v vrcarjt.AutoRejoin, w fyne.Window) fyne.CanvasO
 
 		widget.NewGroup("Controls",
 			fyne.NewContainerWithLayout(layout.NewGridLayout(2),
-				widget.NewButton("Status: Start", func() {
+				widget.NewButton("Start", func() {
 					if v.IsRun() {
 						return
 					}
