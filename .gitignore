@@ -12,3 +12,4 @@
 *.out
 dist/*
 !dist/setting.yml
+cli/*.wav

@@ -145,9 +145,15 @@ func (v *VRCAutoRejoinTool) Run() error {
 	v.Args, err = v.findProcessArgsByName("VRChat.exe")
 	if err == ErrProcessNotFound {
 		v.playAudioFile("start_vrc.wav")
+		v.lock.Lock()
+		v.running = false
+		v.lock.Unlock()
 		return nil
 	}
 	if err != nil {
+		v.lock.Lock()
+		v.running = false
+		v.lock.Unlock()
 		return err
 	}
 
@@ -213,6 +219,9 @@ func (v *VRCAutoRejoinTool) Run() error {
 		Poll:      true,
 	})
 	if err != nil {
+		v.lock.Lock()
+		v.running = false
+		v.lock.Unlock()
 		return err
 	}
 	if v.Config.EnableProcessCheck {
