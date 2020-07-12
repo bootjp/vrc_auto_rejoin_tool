@@ -452,7 +452,7 @@ func (v *VRCAutoRejoinTool) logInspector(line chan *tail.Line, wg *sync.WaitGrou
 		if err := v.rejoin(v.LatestInstance); err != nil {
 			log.Println(err)
 		}
-		time.Sleep(30 * time.Second)
+		time.Sleep(5 * time.Second)
 		wg.Done()
 		return
 	}
