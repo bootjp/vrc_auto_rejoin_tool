@@ -76,7 +76,12 @@ func welcomeScreen(a fyne.App, v vrcarjt.AutoRejoin, w fyne.Window) fyne.CanvasO
 						fyne.LogError(err.Error(), err)
 						a.Quit()
 					}
-					status.SetText("Status: Running")
+					switch v.IsRun() {
+					case true:
+						status.SetText("Status: Running")
+					case false:
+						status.SetText("Status: Stop")
+					}
 				}),
 				widget.NewButton("Stop", func() {
 					if !v.IsRun() {
@@ -86,7 +91,12 @@ func welcomeScreen(a fyne.App, v vrcarjt.AutoRejoin, w fyne.Window) fyne.CanvasO
 						fyne.LogError(err.Error(), err)
 						a.Quit()
 					}
-					status.SetText("Stop")
+					switch v.IsRun() {
+					case true:
+						status.SetText("Status: Running")
+					case false:
+						status.SetText("Status: Stop")
+					}
 				}),
 			),
 		),
