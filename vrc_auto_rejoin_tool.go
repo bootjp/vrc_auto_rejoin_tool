@@ -131,13 +131,14 @@ func (v *VRCAutoRejoinTool) Run() error {
 		return ErrDuplicateRun
 	}
 
-	err = lock.Lock()
-	if err != nil {
+	if err = lock.Lock(); err != nil {
 		return err
 	}
+
 	v.lock.Lock()
 	v.running = true
 	v.lock.Unlock()
+
 	defer lock.UnLock()
 	v.setupTimeLocation()
 

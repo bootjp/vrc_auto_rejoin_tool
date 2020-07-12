@@ -46,8 +46,12 @@ func help(a fyne.App, vrc *vrcarjt.VRCAutoRejoinTool) fyne.CanvasObject {
 
 func welcomeScreen(a fyne.App, v vrcarjt.AutoRejoin, w fyne.Window) fyne.CanvasObject {
 	logo.SetMinSize(fyne.NewSize(250, 250))
-	return widget.NewVBox(
+	status := widget.NewTextGridFromString("Status: Stop")
+	statusContainer := fyne.NewContainerWithLayout(layout.NewCenterLayout(),
+		status,
+	)
 
+	return widget.NewVBox(
 		layout.NewSpacer(),
 		widget.NewHBox(layout.NewSpacer(), logo, layout.NewSpacer()),
 		widget.NewHBox(layout.NewSpacer(),
@@ -57,12 +61,14 @@ func welcomeScreen(a fyne.App, v vrcarjt.AutoRejoin, w fyne.Window) fyne.CanvasO
 			layout.NewSpacer(),
 		),
 
-		fyne.NewContainerWithLayout(layout.NewCenterLayout(),
-			widget.NewTextGridFromString("version: v.X.X.X"),
-		),
+		statusContainer,
+		//fyne.NewContainerWithLayout(layout.NewCenterLayout(),
+		//	widget.NewTextGridFromString("version: v.X.X.X"),
+		//),
+
 		widget.NewGroup("Controls",
 			fyne.NewContainerWithLayout(layout.NewGridLayout(2),
-				widget.NewButton("Start", func() {
+				widget.NewButton("Status: Start", func() {
 					if v.IsRun() {
 						return
 					}
@@ -70,6 +76,7 @@ func welcomeScreen(a fyne.App, v vrcarjt.AutoRejoin, w fyne.Window) fyne.CanvasO
 						fyne.LogError(err.Error(), err)
 						a.Quit()
 					}
+					status.SetText("Status: Running")
 				}),
 				widget.NewButton("Stop", func() {
 					if !v.IsRun() {
@@ -79,6 +86,7 @@ func welcomeScreen(a fyne.App, v vrcarjt.AutoRejoin, w fyne.Window) fyne.CanvasO
 						fyne.LogError(err.Error(), err)
 						a.Quit()
 					}
+					status.SetText("Stop")
 				}),
 			),
 		),
