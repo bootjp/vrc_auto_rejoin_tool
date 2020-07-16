@@ -8,11 +8,10 @@ import (
 	vrcarjt "github.com/bootjp/vrc_auto_rejoin_tool"
 
 	"fyne.io/fyne"
+	"fyne.io/fyne/app"
 	"fyne.io/fyne/canvas"
 	"fyne.io/fyne/layout"
 	"fyne.io/fyne/widget"
-
-	"fyne.io/fyne/app"
 )
 
 var logo = canvas.NewImageFromFile("./logo.png")
@@ -161,7 +160,6 @@ func main() {
 		widget.NewTabItemWithIcon("Control", logo.Resource, welcomeScreen(a, vrc, w)),
 		//widget.NewTabItemWithIcon("Setting", logo.Resource, settingScreen(a, vrc, w)),
 	)
-	w.Resize(fyne.NewSize(400, 400))
 	w.SetContent(tabs)
 	w.ShowAndRun()
 
