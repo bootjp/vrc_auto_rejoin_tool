@@ -40,7 +40,6 @@ func NewVRCAutoRejoinTool() *VRCAutoRejoinTool {
 		EnableRejoin:   !conf.EnableSleepDetector, // EnableSleepDetectorがOnのとき即座にインスタンス移動の検出をしないため
 		InSleep:        false,
 		lock:           &sync.Mutex{},
-		wait:           &sync.WaitGroup{},
 		running:        false,
 	}
 }
@@ -53,7 +52,6 @@ type VRCAutoRejoinTool struct {
 	EnableRejoin   bool
 	InSleep        bool
 	lock           *sync.Mutex
-	wait           *sync.WaitGroup
 	running        bool
 }
 
@@ -159,7 +157,6 @@ func (v *VRCAutoRejoinTool) Run() error {
 	v.lock.Unlock()
 
 	go v.playAudioFile("start.wav")
-	v.wait.Add(1)
 
 	path := home + vrcRelativeLogPath
 	latestLog, err := v.fetchLatestLogName(path)
