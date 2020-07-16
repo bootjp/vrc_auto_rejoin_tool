@@ -409,7 +409,7 @@ func (v *VRCAutoRejoinTool) fetchLatestLogName(path string) (string, error) {
 
 func (v *VRCAutoRejoinTool) processWatcher() {
 
-	for range v.done {
+	for v.IsRun() {
 		log.Println("process watcher available")
 		_, err := v.findProcessPIDByName("VRChat.exe")
 		if err == ErrProcessNotFound {
