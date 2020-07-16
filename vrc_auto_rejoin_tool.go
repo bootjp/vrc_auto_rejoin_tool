@@ -97,7 +97,7 @@ func (v *VRCAutoRejoinTool) Stop() error {
 	v.lock.Lock()
 	defer v.lock.Unlock()
 	go v.playAudioFile("stop.wav")
-	v.done <- true
+	close(v.done)
 	v.running = false
 
 	return nil
@@ -414,7 +414,7 @@ func (v *VRCAutoRejoinTool) processWatcher() {
 			}
 			time.Sleep(30 * time.Second)
 			v.lock.Unlock()
-			v.done <- true
+			close(v.done)
 			v.running = false
 			return
 		}
@@ -478,7 +478,7 @@ func (v *VRCAutoRejoinTool) logInspector(tail *tail.Tail, at time.Time) {
 
 		time.Sleep(30 * time.Second)
 		v.running = false
-		v.done <- true
+		close(v.done)
 		v.lock.Unlock()
 		tail.Cleanup()
 		return
