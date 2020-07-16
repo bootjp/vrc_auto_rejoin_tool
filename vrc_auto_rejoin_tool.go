@@ -410,7 +410,7 @@ func (v *VRCAutoRejoinTool) fetchLatestLogName(path string) (string, error) {
 func (v *VRCAutoRejoinTool) processWatcher() {
 
 	for range v.done {
-		fmt.Println("processWatcher")
+		log.Println("process watcher available")
 		_, err := v.findProcessPIDByName("VRChat.exe")
 		if err == ErrProcessNotFound {
 			if v.Config.EnableRejoinNotice {
@@ -422,10 +422,10 @@ func (v *VRCAutoRejoinTool) processWatcher() {
 			if err != nil {
 				log.Println(err)
 			}
-			time.Sleep(30 * time.Second)
-			v.lock.Unlock()
+			log.Println("process watcher cleanup")
 			close(v.done)
 			v.running = false
+			v.lock.Unlock()
 			return
 		}
 		time.Sleep(10 * time.Second)
@@ -436,7 +436,6 @@ func (v *VRCAutoRejoinTool) processWatcher() {
 func (v *VRCAutoRejoinTool) logInspector(tail *tail.Tail, at time.Time) {
 
 	for msg := range tail.Lines {
-		fmt.Println("log Watcher")
 		text := msg.Text
 		nInstance, err := v.moved(at, text)
 		if err == ErrNotMoved {
@@ -487,6 +486,7 @@ func (v *VRCAutoRejoinTool) logInspector(tail *tail.Tail, at time.Time) {
 			log.Println(err)
 		}
 
+		log.Println("log Watcher clean up")
 		v.running = false
 		close(v.done)
 		v.lock.Unlock()
