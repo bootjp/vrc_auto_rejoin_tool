@@ -161,6 +161,7 @@ func (v *VRCAutoRejoinTool) Run() error {
 
 	v.lock.Lock()
 	v.running = true
+	v.shutdown = false
 	v.lock.Unlock()
 
 	go v.playAudioFile("start.wav")
