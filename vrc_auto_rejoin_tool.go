@@ -42,7 +42,6 @@ func NewVRCAutoRejoinTool() *VRCAutoRejoinTool {
 		lock:           &sync.Mutex{},
 		wait:           &sync.WaitGroup{},
 		running:        false,
-		done:           make(chan bool),
 	}
 }
 
@@ -56,7 +55,6 @@ type VRCAutoRejoinTool struct {
 	lock           *sync.Mutex
 	wait           *sync.WaitGroup
 	running        bool
-	done           chan bool
 }
 
 type AutoRejoin interface {
@@ -97,15 +95,6 @@ func (v *VRCAutoRejoinTool) Stop() error {
 	v.lock.Lock()
 	defer v.lock.Unlock()
 	go v.playAudioFile("stop.wav")
-
-	// FOR DEBUGGING
-	select {
-	case <-v.done:
-	default:
-		// OPEN CHANNEL
-		close(v.done)
-	}
-
 	v.running = false
 
 	return nil
@@ -423,7 +412,6 @@ func (v *VRCAutoRejoinTool) processWatcher() {
 				log.Println(err)
 			}
 			log.Println("process watcher cleanup")
-			close(v.done)
 			v.running = false
 			v.lock.Unlock()
 			return
@@ -486,9 +474,8 @@ func (v *VRCAutoRejoinTool) logInspector(tail *tail.Tail, at time.Time) {
 			log.Println(err)
 		}
 
-		log.Println("log Watcher clean up")
+		log.Println("log watcher clean up")
 		v.running = false
-		close(v.done)
 		v.lock.Unlock()
 		tail.Cleanup()
 		return
