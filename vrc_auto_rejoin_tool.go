@@ -41,6 +41,7 @@ func NewVRCAutoRejoinTool() *VRCAutoRejoinTool {
 		InSleep:        false,
 		lock:           &sync.Mutex{},
 		running:        false,
+		shutdown:       false,
 	}
 }
 
@@ -53,7 +54,7 @@ type VRCAutoRejoinTool struct {
 	InSleep        bool
 	lock           *sync.Mutex
 	running        bool
-	shutdown       chan bool
+	shutdown       bool
 }
 
 type AutoRejoin interface {
@@ -67,7 +68,7 @@ type AutoRejoin interface {
 	setupTimeLocation()
 	playAudioFile(path string)
 	rejoin(i Instance) error
-	logInspector(sig chan bool, line *tail.Tail, at time.Time)
+	logInspector(line *tail.Tail, at time.Time)
 	getUserHome() string
 	findProcessPIDByName(name string) (int32, error)
 	findProcessArgsByName(name string) (string, error)
@@ -79,6 +80,11 @@ func (v *VRCAutoRejoinTool) IsRun() bool {
 	v.lock.Lock()
 	defer v.lock.Unlock()
 	return v.running
+}
+func (v *VRCAutoRejoinTool) IsShutdown() bool {
+	v.lock.Lock()
+	defer v.lock.Unlock()
+	return v.shutdown
 }
 
 func (v *VRCAutoRejoinTool) SleepStart() {
@@ -165,7 +171,6 @@ func (v *VRCAutoRejoinTool) Run() error {
 		return fmt.Errorf("log file not found. %s", err)
 	}
 
-	sig := make(chan bool)
 	start := time.Now().In(time.Local)
 	fmt.Println("RUNNING START AT", start.Format(TimeFormat))
 
@@ -225,9 +230,9 @@ func (v *VRCAutoRejoinTool) Run() error {
 		return err
 	}
 	if v.Config.EnableProcessCheck {
-		go v.processWatcher(sig)
+		go v.processWatcher()
 	}
-	go v.logInspector(sig, t, start)
+	go v.logInspector(t, start)
 
 	return nil
 }
@@ -395,9 +400,9 @@ func (v *VRCAutoRejoinTool) fetchLatestLogName(path string) (string, error) {
 	return latestLog, nil
 }
 
-func (v *VRCAutoRejoinTool) processWatcher(sig chan bool) {
+func (v *VRCAutoRejoinTool) processWatcher() {
 
-	for range sig {
+	for v.IsRun() && !v.IsShutdown() {
 		log.Println("process watcher available")
 		_, err := v.findProcessPIDByName("VRChat.exe")
 		if err == ErrProcessNotFound {
@@ -405,8 +410,8 @@ func (v *VRCAutoRejoinTool) processWatcher(sig chan bool) {
 				v.playAudioFile("rejoin_notice.wav")
 				time.Sleep(1 * time.Minute)
 			}
-			close(v.shutdown)
 			v.lock.Lock()
+			v.shutdown = true
 			err := v.rejoin(v.LatestInstance)
 			if err != nil {
 				log.Println(err)
@@ -422,9 +427,9 @@ func (v *VRCAutoRejoinTool) processWatcher(sig chan bool) {
 
 }
 
-func (v *VRCAutoRejoinTool) logInspector(sig chan bool, tail *tail.Tail, at time.Time) {
+func (v *VRCAutoRejoinTool) logInspector(tail *tail.Tail, at time.Time) {
 
-	for range sig {
+	for v.IsRun() && !v.IsShutdown() {
 		for msg := range tail.Lines {
 			text := msg.Text
 			nInstance, err := v.moved(at, text)
@@ -458,14 +463,13 @@ func (v *VRCAutoRejoinTool) logInspector(sig chan bool, tail *tail.Tail, at time
 					continue
 				}
 			}
-			close(v.shutdown)
+			v.lock.Lock()
+			v.shutdown = true
 
 			if v.Config.EnableRejoinNotice {
 				v.playAudioFile("rejoin_notice.wav")
 				time.Sleep(1 * time.Minute)
 			}
-
-			v.lock.Lock()
 
 			err = v.killProcessByName("VRChat.exe")
 			if err != nil {
