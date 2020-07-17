@@ -1,4 +1,5 @@
----
 enable_process_check: yes
 debug: no
-enable_radio_exercises: yes
+enable_radio_exercises: no
+enable_rejoin_notice: yes
+

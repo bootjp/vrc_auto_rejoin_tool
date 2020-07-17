@@ -1,5 +1,11 @@
 ---
-enable_process_check: no   # VRChat.exe がダウンしたときも auto_rejoin_tool で元のインスタンスに戻る対象とする
-enable_radio_exercises: no # 5:45 ~ 8:00 のインスタンス移動の検出を無効化します．
+# VRChat.exe がダウンしたときも auto_rejoin_tool で元のインスタンスに戻る対象とする
+enable_process_check: no
+# 5:45 ~ 8:00 のインスタンス移動の検出を無効化します．
+enable_radio_exercises: no
 debug: no                  # yes にするといろいろログがでます，バグ報告時などに
 enable_rejoin_notice: yes # もとのインスタンスに戻る前に音声データによりお知らせをするか
+# これから下はdaemon mode リリース時のオプション
+#continue: no
+#sleep_world:
+#  - wrld_d6a2f001-f4bd-4801-8f0e-ad39d0084e90
