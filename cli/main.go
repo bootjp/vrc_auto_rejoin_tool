@@ -4,6 +4,7 @@ import (
 	"fyne.io/fyne/dialog"
 	"log"
 	"net/url"
+	"time"
 
 	vrcarjt "github.com/bootjp/vrc_auto_rejoin_tool"
 
@@ -49,54 +50,61 @@ func welcomeScreen(a fyne.App, v vrcarjt.AutoRejoin, w fyne.Window) fyne.CanvasO
 	statusContainer := fyne.NewContainerWithLayout(layout.NewCenterLayout(),
 		status,
 	)
+	start := widget.NewButton("Start", func() {
+		if v.IsRun() {
+			return
+		}
+		if err := v.Run(); err != nil {
+			fyne.LogError(err.Error(), err)
+			a.Quit()
+		}
+
+	})
+	stop := widget.NewButton("Stop", func() {
+		if !v.IsRun() {
+			return
+		}
+		if err := v.Stop(); err != nil {
+			fyne.LogError(err.Error(), err)
+			a.Quit()
+		}
+	})
+	// check status
+	go func() {
+		for {
+			switch v.IsRun() {
+			case true:
+				status.SetText("Status: Running")
+				start.Hidden = true
+				stop.Hidden = false
+			case false:
+				status.SetText("Status: Stop")
+				start.Hidden = false
+				stop.Hidden = true
+			}
+			time.Sleep(1 * time.Second)
+		}
+
+	}()
 
 	return widget.NewVBox(
 		layout.NewSpacer(),
-		widget.NewHBox(layout.NewSpacer(), logo, layout.NewSpacer()),
 		widget.NewHBox(layout.NewSpacer(),
 			widget.NewHyperlink("BOOTH", parseURL("https://bootjp.booth.pm/items/1542381")),
 			widget.NewLabel("-"),
 			widget.NewHyperlink("GitHub", parseURL("https://github.com/bootjp/vrc_auto_rejoin_tool")),
 			layout.NewSpacer(),
 		),
-
+		widget.NewHBox(layout.NewSpacer(), logo, layout.NewSpacer()),
 		statusContainer,
 		//fyne.NewContainerWithLayout(layout.NewCenterLayout(),
 		//	widget.NewTextGridFromString("version: v.X.X.X"),
 		//),
 
 		widget.NewGroup("Controls",
-			fyne.NewContainerWithLayout(layout.NewGridLayout(2),
-				widget.NewButton("Start", func() {
-					if v.IsRun() {
-						return
-					}
-					if err := v.Run(); err != nil {
-						fyne.LogError(err.Error(), err)
-						a.Quit()
-					}
-					switch v.IsRun() {
-					case true:
-						status.SetText("Status: Running")
-					case false:
-						status.SetText("Status: Stop")
-					}
-				}),
-				widget.NewButton("Stop", func() {
-					if !v.IsRun() {
-						return
-					}
-					if err := v.Stop(); err != nil {
-						fyne.LogError(err.Error(), err)
-						a.Quit()
-					}
-					switch v.IsRun() {
-					case true:
-						status.SetText("Status: Running")
-					case false:
-						status.SetText("Status: Stop")
-					}
-				}),
+			fyne.NewContainerWithLayout(layout.NewGridLayout(1),
+				start,
+				stop,
 			),
 		),
 	)
