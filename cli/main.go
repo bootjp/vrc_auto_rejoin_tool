@@ -99,9 +99,9 @@ func welcomeScreen(a fyne.App, v vrcarjt.AutoRejoin, w fyne.Window) fyne.CanvasO
 		),
 		widget.NewHBox(layout.NewSpacer(), logo, layout.NewSpacer()),
 		statusContainer,
-		//fyne.NewContainerWithLayout(layout.NewCenterLayout(),
-		//	widget.NewTextGridFromString("version: v.X.X.X"),
-		//),
+		fyne.NewContainerWithLayout(layout.NewCenterLayout(),
+			widget.NewTextGridFromString("version: "+version),
+		),
 
 		widget.NewGroup("Controls",
 			fyne.NewContainerWithLayout(layout.NewGridLayout(1),
