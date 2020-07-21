@@ -124,9 +124,8 @@ func (v *VRCAutoRejoinTool) GetUserHome() string {
 var ErrDuplicateRun = errors.New("auto rejoin tool duplicate run error")
 
 func (v *VRCAutoRejoinTool) Run() error {
-
 	v.setupTimeLocation()
-
+	var err error
 	v.Args, err = v.findProcessArgsByName("VRChat.exe")
 	if err == ErrProcessNotFound {
 		go v.playAudioFile("start_vrc.wav")
