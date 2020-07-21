@@ -17,6 +17,8 @@ import (
 
 var logo = canvas.NewImageFromFile("./logo.png")
 
+var version = "None"
+
 func parseURL(urlStr string) *url.URL {
 	link, err := url.Parse(urlStr)
 	if err != nil {
