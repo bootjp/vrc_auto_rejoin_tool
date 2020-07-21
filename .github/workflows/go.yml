@@ -1,5 +1,5 @@
 name: Go
-on: [push, pull_request]
+on:  pull_request
 jobs:
 
   build:
@@ -25,25 +25,3 @@ jobs:
 
     - name: Test
       run: go test -v ./...
-
-    - name: Generate binary icon
-      run: windres --output-format=coff -o cli/logoico.syso cli/logoico.rs
-
-    - name: Build as binary
-      env:
-        GOOS: windows
-        GOARCH: amd64
-      run: |
-        go build -ldflags "-X main.version=$(git describe --tags --abbrev=0)" -o ./dist/vrc_auto_rejoin_tool_x64.exe ./cli/
-
-    - name: Achive to zip
-      run: |
-        powershell compress-archive -Path dist/* -DestinationPath dist/vrc_auto_rejoin_tool_x64.zip
-
-    - name: Release
-      uses: softprops/action-gh-release@v1
-      if: startsWith(github.ref, 'refs/tags/')
-      with:
-        files: "dist/vrc_auto_rejoin_tool_x64.zip"
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
