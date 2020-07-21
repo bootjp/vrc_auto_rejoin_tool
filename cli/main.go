@@ -157,13 +157,29 @@ func settingScreen(a fyne.App, vrc *vrcarjt.VRCAutoRejoinTool, w fyne.Window) fy
 
 }
 
+const lockfile = "vrc_auto_rejoin_tool.rejoinLock"
+
 func main() {
 	vrc := vrcarjt.NewVRCAutoRejoinTool()
+
+	home := vrc.GetUserHome()
+	lock := vrcarjt.NewDupRunLock(home + `\AppData\Local\Temp\` + lockfile)
+	ok, err := lock.Try()
+
+	if err != nil || !ok {
+		log.Println("auto rejoin tool が多重起動しています．")
+	}
+
+	if err = lock.Lock(); err != nil {
+		log.Println("auto rejoin tool が多重起動しています．")
+	}
+
+	defer lock.UnLock()
 
 	a := app.NewWithID("vrc_auto_rejoin_tool")
 	a.SetIcon(logo.Resource)
 
-	w := a.NewWindow("VRC AutoRejoinTool")
+	w := a.NewWindow("vrc_auto_rejoin_tool")
 	tabs := widget.NewTabContainer(
 		widget.NewTabItemWithIcon("Control", logo.Resource, welcomeScreen(a, vrc, w)),
 		//widget.NewTabItemWithIcon("Setting", logo.Resource, settingScreen(a, vrc, w)),

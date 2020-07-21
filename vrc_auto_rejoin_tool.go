@@ -24,7 +24,6 @@ import (
 	"time"
 )
 
-const lockfile = "vrc_auto_rejoin_tool.rejoinLock"
 const WorldLogPrefix = "[VRCFlowManagerVRC] Destination set: wrld_"
 const Location = "Local"
 const TimeFormat = "2006.01.02 15:04:05"
@@ -65,13 +64,13 @@ type AutoRejoin interface {
 	ParseLatestInstance(path string) (Instance, error)
 	SleepStart()
 	Stop() error
+	GetUserHome() string
 
 	sleepInstanceDetector() Instance
 	setupTimeLocation()
 	playAudioFile(path string)
 	rejoin(i Instance) error
 	logInspector(line *tail.Tail, at time.Time)
-	getUserHome() string
 	findProcessPIDByName(name string) (int32, error)
 	findProcessArgsByName(name string) (string, error)
 	killProcessByName(name string) error
@@ -111,7 +110,7 @@ func (v *VRCAutoRejoinTool) sleepInstanceDetector() Instance {
 	return Instance{}
 }
 
-func (v *VRCAutoRejoinTool) getUserHome() string {
+func (v *VRCAutoRejoinTool) GetUserHome() string {
 	if runtime.GOOS == "windows" {
 		home := os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
 		if home == "" {
@@ -125,25 +124,7 @@ func (v *VRCAutoRejoinTool) getUserHome() string {
 var ErrDuplicateRun = errors.New("auto rejoin tool duplicate run error")
 
 func (v *VRCAutoRejoinTool) Run() error {
-	home := v.getUserHome()
-	lock := NewDupRunLock(home + `\AppData\Local\Temp\` + lockfile)
-	ok, err := lock.Try()
 
-	if err != nil || !ok {
-		v.rejoinLock.Lock()
-		v.running = false
-		v.rejoinLock.Unlock()
-		return ErrDuplicateRun
-	}
-
-	if err = lock.Lock(); err != nil {
-		v.rejoinLock.Lock()
-		v.running = false
-		v.rejoinLock.Unlock()
-		return err
-	}
-
-	defer lock.UnLock()
 	v.setupTimeLocation()
 
 	v.Args, err = v.findProcessArgsByName("VRChat.exe")
@@ -374,7 +355,7 @@ func (v *VRCAutoRejoinTool) processWatcher() {
 				go v.playAudioFile("rejoin_notice.wav")
 				time.Sleep(1 * time.Minute)
 			}
-			// 警告オーディを生成中に止まった場合なにもしない
+			// 警告オーディオ再生中に止まった場合なにもしない
 			if !v.running {
 				log.Println("cancel rejoin")
 				v.shutdown = true
@@ -443,7 +424,7 @@ func (v *VRCAutoRejoinTool) logInspector(tail *tail.Tail, at time.Time) {
 			time.Sleep(1 * time.Minute)
 		}
 
-		// 警告オーディを生成中に止まった場合なにもしない
+		// 警告オーディオ再生中に止まった場合なにもしない
 		if !v.running {
 			tail.Cleanup()
 			log.Println("cancel rejoin")
