@@ -121,10 +121,14 @@ func (v *VRCAutoRejoinTool) GetUserHome() string {
 	return os.Getenv("HOME")
 }
 
-var ErrDuplicateRun = errors.New("auto rejoin tool duplicate run error")
-
 func (v *VRCAutoRejoinTool) Run() error {
 	v.setupTimeLocation()
+	home := v.GetUserHome()
+
+	if home == "" {
+		return errors.New("home folder not found")
+	}
+
 	var err error
 	v.Args, err = v.findProcessArgsByName("VRChat.exe")
 	if err == ErrProcessNotFound {
