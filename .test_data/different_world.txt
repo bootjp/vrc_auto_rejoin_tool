@@ -1,0 +1,8 @@
+2019.08.18 21:02:38 Log        -  [VRCFlowManagerVRC] Destination set: wrld_dc124ed6-acec-4d55-9866-54ab66af172d
+
+
+2021.02.03 20:28:52 Log        -  [ǄǅǅǄǅǅǅǅǅǅǄǅǄǅǅǅǅǄǄǄǄǄǅǄǄǅǄǄǅǅǅǅǅǅǄǄǅǅǅǅǄǅǄǅǄǅǅ] Clearing Room Metadata
+
+
+2019.08.18 21:02:38 Log        -  [VRCFlowManagerVRC] Destination set: wrld_cc124ed6-acec-4d55-9866-54ab66af172d
+2019.08.18 21:02:38 Log        -  [VRCFlowManagerVRC] waiting for UI Manager
