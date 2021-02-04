@@ -24,7 +24,7 @@ import (
 	"time"
 )
 
-const WorldLogPrefix = "[VRCFlowManagerVRC] Destination set: wrld_"
+const WorldLogIdentifier = "] Destination set: wrld_"
 const Location = "Local"
 const TimeFormat = "2006.01.02 15:04:05"
 const vrcRelativeLogPath = `\AppData\LocalLow\VRChat\VRChat\`
@@ -310,7 +310,7 @@ func (v *VRCAutoRejoinTool) parseLatestInstance(s string) (Instance, error) {
 			line = line[:len(line)-1]
 		}
 
-		if !strings.Contains(line, WorldLogPrefix) {
+		if !strings.Contains(line, WorldLogIdentifier) {
 			continue
 
 		}
@@ -461,7 +461,7 @@ func (v *VRCAutoRejoinTool) moved(at time.Time, l string) (Instance, error) {
 		return Instance{}, ErrNotMoved
 	}
 
-	if !strings.Contains(l, WorldLogPrefix) {
+	if !strings.Contains(l, WorldLogIdentifier) {
 		return Instance{}, ErrNotMoved
 	}
 
