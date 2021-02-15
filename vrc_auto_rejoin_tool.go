@@ -186,7 +186,7 @@ func (v *VRCAutoRejoinTool) rejoin(i Instance, killProcess bool) error {
 	if killProcess {
 		err := v.killProcessByName("VRChat.exe")
 		if err != nil {
-			return err
+			log.Println(err)
 		}
 	}
 	params := strings.Split(v.Args, `VRChat.exe" `)
