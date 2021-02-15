@@ -186,7 +186,19 @@ func (v *VRCAutoRejoinTool) Run() error {
 	return nil
 }
 
-func (v *VRCAutoRejoinTool) rejoin(i Instance) error {
+func (v *VRCAutoRejoinTool) rejoin(i Instance, killProcess bool) error {
+	v.rejoinLock.Lock()
+	v.shutdown = true
+	defer func() {
+		v.running = false
+		v.rejoinLock.Unlock()
+	}()
+	if killProcess {
+		err := v.killProcessByName("VRChat.exe")
+		if err != nil {
+			return err
+		}
+	}
 	params := strings.Split(v.Args, `VRChat.exe" `)
 	exe := strings.Join(params[:1], "") + `VRChat.exe`
 	exe = strings.Trim(exe, `"`)
@@ -364,15 +376,10 @@ func (v *VRCAutoRejoinTool) processWatcher() {
 				v.shutdown = true
 				return
 			}
-			v.rejoinLock.Lock()
-			v.shutdown = true
-			err := v.rejoin(v.LatestInstance)
+			err := v.rejoin(v.LatestInstance, false)
 			if err != nil {
 				log.Println(err)
 			}
-			log.Println("process watcher cleanup")
-			v.running = false
-			v.rejoinLock.Unlock()
 			return
 		}
 		time.Sleep(10 * time.Second)
@@ -433,21 +440,10 @@ func (v *VRCAutoRejoinTool) logInspector(tail *tail.Tail, at time.Time) {
 			log.Println("cancel rejoin")
 			return
 		}
-		v.rejoinLock.Lock()
-		v.shutdown = true
-		err = v.killProcessByName("VRChat.exe")
+		err = v.rejoin(v.LatestInstance, true)
 		if err != nil {
 			log.Println(err)
 		}
-
-		err = v.rejoin(v.LatestInstance)
-		if err != nil {
-			log.Println(err)
-		}
-
-		log.Println("log watcher clean up")
-		v.running = false
-		v.rejoinLock.Unlock()
 		tail.Cleanup()
 		return
 	}
