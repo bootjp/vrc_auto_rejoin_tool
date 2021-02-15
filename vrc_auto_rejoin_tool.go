@@ -65,16 +65,6 @@ type AutoRejoin interface {
 	SleepStart()
 	Stop() error
 	GetUserHome() string
-
-	sleepInstanceDetector() Instance
-	setupTimeLocation()
-	playAudioFile(path string)
-	rejoin(i Instance) error
-	logInspector(line *tail.Tail, at time.Time)
-	findProcessPIDByName(name string) (int32, error)
-	findProcessArgsByName(name string) (string, error)
-	killProcessByName(name string) error
-	inTimeRange(start time.Time, end time.Time, target time.Time) bool
 }
 
 func (v *VRCAutoRejoinTool) IsRun() bool {
