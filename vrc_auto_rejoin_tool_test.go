@@ -175,7 +175,7 @@ func TestMove(t *testing.T) {
 
 	t.Run("log has nonce", func(t *testing.T) {
 
-		expect := false
+		expect := true
 		log := `2019.08.18 21:48:39 Log        -  [VRCFlowManagerVRC] Destination set: wrld_58260f57-0076-41d3-a617-c0d0bc8f3d6f:43710~private(usr_d97adcdc-718b-4361-9b75-2c97c0a4993d)~nonce(86CB2A7F4E4AC916CD5A1313F656863C1E80BD2ED63738EA789E2B4C25B48F39)`
 
 		got := NewVRCAutoRejoinTool().isMove(freeze, log)
