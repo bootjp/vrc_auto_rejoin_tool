@@ -13,6 +13,14 @@ import (
 	"github.com/jinzhu/now"
 )
 
+func init() {
+	var err error
+	time.Local, err = time.LoadLocation(Location)
+	if err != nil {
+		time.Local = time.FixedZone(Location, 9*60*60)
+	}
+}
+
 func TestParseLatestInstance(t *testing.T) {
 	loc, err := time.LoadLocation(Location)
 	if err != nil {
@@ -97,18 +105,11 @@ func TestParseLatestInstance(t *testing.T) {
 			}
 			t.FailNow()
 		}
-		//t.
 	})
 
 }
 
 func TestNewInstanceByLog(t *testing.T) {
-	var err error
-	time.Local, err = time.LoadLocation(Location)
-	if err != nil {
-		time.Local = time.FixedZone(Location, 9*60*60)
-	}
-
 	log := `2019.08.18 21:02:38 Log        -  [VRCFlowManagerVRC] Destination set: wrld_cc124ed6-acec-4d55-9866-54ab66af172d`
 	ti, err := time.ParseInLocation(TimeFormat, "2019.08.18 21:02:38", time.Local)
 
@@ -121,18 +122,13 @@ func TestNewInstanceByLog(t *testing.T) {
 		t.Error(err)
 	}
 	if expect != got {
-		fmt.Printf("%v\n", expect)
+		fmt.Printf("expect %v\n", expect)
 		fmt.Printf("%v\n", got)
 		t.Fatal()
 	}
 }
 
 func TestNewInstanceByLogWithTofu(t *testing.T) {
-	var err error
-	time.Local, err = time.LoadLocation(Location)
-	if err != nil {
-		time.Local = time.FixedZone(Location, 9*60*60)
-	}
 
 	log := `2019.08.18 21:02:38 Log        -  [ǅǅǄǄǅǅǄǅǄǄǄǅǅǅǄǄǅǅǅǅǅǅǅǄǄǄǅǅǅǅǄǅǅǅǄǅǄǄǅǅǄǅǄǅǄǄǄ] Destination set: wrld_cc124ed6-acec-4d55-9866-54ab66af172d`
 	ti, err := time.ParseInLocation(TimeFormat, "2019.08.18 21:02:38", time.Local)
@@ -153,26 +149,13 @@ func TestNewInstanceByLogWithTofu(t *testing.T) {
 }
 
 func TestMove(t *testing.T) {
-	var err error
-	time.Local, err = time.LoadLocation(Location)
-	if err != nil {
-		time.Local = time.FixedZone(Location, 9*60*60)
-	}
-
 	freeze := time.Date(2018, 1, 1, 0, 0, 0, 0, time.Local)
 
-	ti, err := time.ParseInLocation(TimeFormat, "2019.08.18 21:02:38", time.Local)
-	expect := Instance{ID: "wrld_cc124ed6-acec-4d55-9866-54ab66af172d", Time: ti}
-
 	t.Run("success case", func(t *testing.T) {
+		expect := true
 		log := `2019.08.18 21:02:38 Log        -  [VRCFlowManagerVRC] Destination set: wrld_cc124ed6-acec-4d55-9866-54ab66af172d`
-		if err != nil {
-			t.Error(err)
-		}
-		got, err := NewVRCAutoRejoinTool().moved(freeze, log)
-		if err != nil {
-			t.Error(err)
-		}
+
+		got := NewVRCAutoRejoinTool().isMove(freeze, log)
 
 		if expect != got {
 			fmt.Printf("%v\n", expect)
@@ -183,29 +166,19 @@ func TestMove(t *testing.T) {
 
 	t.Run("log not found case", func(t *testing.T) {
 		log := `2019.08.18 21:02:38 Log `
-		if err != nil {
-			t.Error(err)
-		}
-		_, err := NewVRCAutoRejoinTool().moved(freeze, log)
-		if err != ErrNotMoved {
+		expect := false
+		got := NewVRCAutoRejoinTool().isMove(freeze, log)
+		if expect != got {
 			t.FailNow()
 		}
 	})
 
 	t.Run("log has nonce", func(t *testing.T) {
 
-		ti, err := time.ParseInLocation(TimeFormat, "2019.08.18 21:48:39", time.Local)
-		expect := Instance{ID: "wrld_58260f57-0076-41d3-a617-c0d0bc8f3d6f:43710~private(usr_d97adcdc-718b-4361-9b75-2c97c0a4993d)~nonce(86CB2A7F4E4AC916CD5A1313F656863C1E80BD2ED63738EA789E2B4C25B48F39)", Time: ti}
-
+		expect := false
 		log := `2019.08.18 21:48:39 Log        -  [VRCFlowManagerVRC] Destination set: wrld_58260f57-0076-41d3-a617-c0d0bc8f3d6f:43710~private(usr_d97adcdc-718b-4361-9b75-2c97c0a4993d)~nonce(86CB2A7F4E4AC916CD5A1313F656863C1E80BD2ED63738EA789E2B4C25B48F39)`
 
-		if err != nil {
-			t.Error(err)
-		}
-		got, err := NewVRCAutoRejoinTool().moved(freeze, log)
-		if err != nil {
-			t.Error(err)
-		}
+		got := NewVRCAutoRejoinTool().isMove(freeze, log)
 
 		if expect != got {
 			fmt.Printf("%v\n", expect)
@@ -215,14 +188,10 @@ func TestMove(t *testing.T) {
 	})
 
 	t.Run("success case", func(t *testing.T) {
+		expect := true
 		log := `2019.08.18 21:02:38 Log        -  [VRCFlowManagerVRC] Destination set: wrld_cc124ed6-acec-4d55-9866-54ab66af172d`
-		if err != nil {
-			t.Error(err)
-		}
-		got, err := NewVRCAutoRejoinTool().moved(freeze, log)
-		if err != nil {
-			t.Error(err)
-		}
+
+		got := NewVRCAutoRejoinTool().isMove(freeze, log)
 
 		if expect != got {
 			fmt.Printf("%v\n", expect)
@@ -233,7 +202,6 @@ func TestMove(t *testing.T) {
 
 }
 
-
 func TestMoveWithTofu(t *testing.T) {
 	var err error
 	time.Local, err = time.LoadLocation(Location)
@@ -243,72 +211,80 @@ func TestMoveWithTofu(t *testing.T) {
 
 	freeze := time.Date(2018, 1, 1, 0, 0, 0, 0, time.Local)
 
-	ti, err := time.ParseInLocation(TimeFormat, "2019.08.18 21:02:38", time.Local)
-	expect := Instance{ID: "wrld_cc124ed6-acec-4d55-9866-54ab66af172d", Time: ti}
-
 	t.Run("success case", func(t *testing.T) {
+		expect := true
 		log := `2019.08.18 21:02:38 Log        -  [ǅǅǄǄǅǅǄǅǄǄǄǅǅǅǄǄǅǅǅǅǅǅǅǄǄǄǅǅǅǅǄǅǅǅǄǅǄǄǅǅǄǅǄǅǄǄǄ] Destination set: wrld_cc124ed6-acec-4d55-9866-54ab66af172d`
-		if err != nil {
-			t.Error(err)
-		}
-		got, err := NewVRCAutoRejoinTool().moved(freeze, log)
-		if err != nil {
-			t.Error(err)
-		}
 
-		if expect != got {
-			fmt.Printf("%v\n", expect)
-			fmt.Printf("%v\n", got)
+		move := NewVRCAutoRejoinTool().isMove(freeze, log)
+
+		if expect != move {
+			fmt.Printf("expect %v\n", expect)
+			fmt.Printf("%v\n", move)
 			t.FailNow()
 		}
 	})
 
 	t.Run("log not found case", func(t *testing.T) {
+		expect := false
 		log := `2019.08.18 21:02:38 Log `
-		if err != nil {
-			t.Error(err)
-		}
-		_, err := NewVRCAutoRejoinTool().moved(freeze, log)
-		if err != ErrNotMoved {
+
+		move := NewVRCAutoRejoinTool().isMove(freeze, log)
+		if expect != move {
 			t.FailNow()
 		}
 	})
 
 	t.Run("log has nonce", func(t *testing.T) {
 
-		ti, err := time.ParseInLocation(TimeFormat, "2019.08.18 21:48:39", time.Local)
-		expect := Instance{ID: "wrld_58260f57-0076-41d3-a617-c0d0bc8f3d6f:43710~private(usr_d97adcdc-718b-4361-9b75-2c97c0a4993d)~nonce(86CB2A7F4E4AC916CD5A1313F656863C1E80BD2ED63738EA789E2B4C25B48F39)", Time: ti}
-
+		expect := true
 		log := `2019.08.18 21:48:39 Log        -  [ǅǅǄǄǅǅǄǅǄǄǄǅǅǅǄǄǅǅǅǅǅǅǅǄǄǄǅǅǅǅǄǅǅǅǄǅǄǄǅǅǄǅǄǅǄǄǄ] Destination set: wrld_58260f57-0076-41d3-a617-c0d0bc8f3d6f:43710~private(usr_d97adcdc-718b-4361-9b75-2c97c0a4993d)~nonce(86CB2A7F4E4AC916CD5A1313F656863C1E80BD2ED63738EA789E2B4C25B48F39)`
 
-		if err != nil {
-			t.Error(err)
-		}
-		got, err := NewVRCAutoRejoinTool().moved(freeze, log)
-		if err != nil {
-			t.Error(err)
-		}
+		got := NewVRCAutoRejoinTool().isMove(freeze, log)
 
 		if expect != got {
-			fmt.Printf("%v\n", expect)
+			fmt.Printf("expect %v\n", expect)
 			fmt.Printf("%v\n", got)
 			t.FailNow()
 		}
 	})
 
 	t.Run("success case", func(t *testing.T) {
+		expect := true
 		log := `2019.08.18 21:02:38 Log        -  [ǅǅǄǄǅǅǄǅǄǄǄǅǅǅǄǄǅǅǅǅǅǅǅǄǄǄǅǅǅǅǄǅǅǅǄǅǄǄǅǅǄǅǄǅǄǄǄ] Destination set: wrld_cc124ed6-acec-4d55-9866-54ab66af172d`
-		if err != nil {
-			t.Error(err)
+		move := NewVRCAutoRejoinTool().isMove(freeze, log)
+
+		if expect != move {
+			fmt.Printf("expect %v\n", expect)
+			fmt.Printf("%v\n", move)
+			t.FailNow()
 		}
-		got, err := NewVRCAutoRejoinTool().moved(freeze, log)
-		if err != nil {
-			t.Error(err)
-		}
+	})
+
+}
+
+func TestTimeout(t *testing.T) {
+	t.Run("timeout check true", func(t *testing.T) {
+		expect := true
+		log := `2021.02.14 10:12:48 Error      -  [ǅǅǅǅǄǄǅǅǄǅǄǄǄǄǄǅǅǄǄǄǅǄǅǄǄǅǄǅǄǅǄǅǄǄǅǄǄǄǅǄǄǅǄǄǄǄǅ] Timeout: Your connection to VRChat timed out.`
+
+		got := NewVRCAutoRejoinTool().isTimeout(log)
 
 		if expect != got {
-			fmt.Printf("%v\n", expect)
-			fmt.Printf("%v\n", got)
+			fmt.Printf("expect %v\n", expect)
+			fmt.Printf("got %v\n", got)
+			t.FailNow()
+		}
+	})
+
+	t.Run("timeout check false", func(t *testing.T) {
+		expect := false
+		log := `2021.02.13 19:39:46 Log        -  [API] Fetching user`
+
+		got := NewVRCAutoRejoinTool().isTimeout(log)
+
+		if expect != got {
+			fmt.Printf("expect %v\n", expect)
+			fmt.Printf("got %v\n", got)
 			t.FailNow()
 		}
 	})

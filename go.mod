@@ -13,7 +13,8 @@ require (
 	github.com/mitchellh/go-ps v1.0.0
 	github.com/shirou/gopsutil v2.20.3+incompatible
 	github.com/stretchr/testify v1.6.1 // indirect
-	golang.org/x/sys v0.0.0-20200409092240-59c9f1ba88fa // indirect
+	golang.org/x/net v0.0.0-20201021035429-f5854403a974 // indirect
+	golang.org/x/sys v0.0.0-20210119212857-b64e53b001e4 // indirect
 	gopkg.in/fsnotify.v1 v1.4.7 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v2 v2.2.8
