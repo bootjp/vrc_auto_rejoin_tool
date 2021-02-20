@@ -3,6 +3,7 @@ package vrcarjt
 import (
 	"errors"
 	"fmt"
+
 	"github.com/jinzhu/now"
 
 	"os/exec"
@@ -28,6 +29,7 @@ const WorldLogIdentifier = "] Destination set: wrld_"
 const Location = "Local"
 const TimeFormat = "2006.01.02 15:04:05"
 const vrcRelativeLogPath = `\AppData\LocalLow\VRChat\VRChat\`
+const Timeout = "Timeout: Your connection to VRChat timed out."
 
 func NewVRCAutoRejoinTool() *VRCAutoRejoinTool {
 	conf := LoadConf("setting.yml")
@@ -111,8 +113,16 @@ func (v *VRCAutoRejoinTool) GetUserHome() string {
 	return os.Getenv("HOME")
 }
 
+func init() {
+	var err error
+	time.Local, err = time.LoadLocation(Location)
+	if err != nil {
+		time.Local = time.FixedZone(Location, 9*60*60)
+	}
+}
+
 func (v *VRCAutoRejoinTool) Run() error {
-	v.setupTimeLocation()
+
 	home := v.GetUserHome()
 
 	if home == "" {
@@ -141,7 +151,6 @@ func (v *VRCAutoRejoinTool) Run() error {
 	v.rejoinLock.Unlock()
 
 	go v.playAudioFile("start.wav")
-
 	path := home + vrcRelativeLogPath
 	latestLog, err := v.fetchLatestLogName(path)
 	if err != nil {
@@ -264,14 +273,6 @@ func (v *VRCAutoRejoinTool) inTimeRange(start time.Time, end time.Time, target t
 	return !start.After(target) || !end.Before(target)
 }
 
-func (v *VRCAutoRejoinTool) setupTimeLocation() {
-	var err error
-	time.Local, err = time.LoadLocation(Location)
-	if err != nil {
-		time.Local = time.FixedZone(Location, 9*60*60)
-	}
-}
-
 func (v *VRCAutoRejoinTool) playAudioFile(path string) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -386,19 +387,13 @@ func (v *VRCAutoRejoinTool) logInspector(tail *tail.Tail, at time.Time) {
 			tail.Cleanup()
 			break
 		}
-		text := msg.Text
-		nInstance, err := v.moved(at, text)
-		if err == ErrNotMoved {
+
+		logLine := msg.Text
+
+		if !v.isMove(at, logLine) && !v.isTimeout(logLine) {
 			continue
 		}
 
-		if err != nil {
-			log.Println(err)
-		}
-
-		if v.LatestInstance.ID == nInstance.ID {
-			continue
-		}
 		log.Println("instance move detected")
 
 		if v.Config.EnableRadioExercises {
@@ -430,35 +425,42 @@ func (v *VRCAutoRejoinTool) logInspector(tail *tail.Tail, at time.Time) {
 			log.Println("cancel rejoin")
 			return
 		}
-		err = v.rejoin(v.LatestInstance, true)
+
+		err := v.rejoin(v.LatestInstance, true)
 		if err != nil {
 			log.Println(err)
 		}
+
 		tail.Cleanup()
 		return
 	}
 }
 
-// ErrNotMoved is Error when a move cannot be detected in the log
-var ErrNotMoved = errors.New("not moved")
-
-func (v *VRCAutoRejoinTool) moved(at time.Time, l string) (Instance, error) {
+func (v *VRCAutoRejoinTool) isMove(at time.Time, l string) bool {
 	if l == "" {
-		return Instance{}, ErrNotMoved
+		return false
 	}
 
 	if !strings.Contains(l, WorldLogIdentifier) {
-		return Instance{}, ErrNotMoved
+		return false
 	}
 
 	i, err := NewInstanceByLog(l)
 	if err != nil {
-		return i, ErrNotMoved
+		return false
 	}
 	if i.Time.Before(at) {
-		return Instance{}, ErrNotMoved
+		return false
 	}
 
-	return i, nil
+	if v.LatestInstance.ID == i.ID {
+		return false
+	}
 
+	return true
+
+}
+
+func (v *VRCAutoRejoinTool) isTimeout(log string) bool {
+	return strings.Contains(log, Timeout)
 }
