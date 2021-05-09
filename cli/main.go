@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fyne.io/fyne/dialog"
 	"log"
 	"net/url"
 	"time"
@@ -11,6 +10,7 @@ import (
 	"fyne.io/fyne"
 	"fyne.io/fyne/app"
 	"fyne.io/fyne/canvas"
+	"fyne.io/fyne/dialog"
 	"fyne.io/fyne/layout"
 	"fyne.io/fyne/widget"
 )
@@ -163,7 +163,14 @@ const lockfile = "vrc_auto_rejoin_tool.rejoinLock"
 
 func main() {
 	vrc := vrcarjt.NewVRCAutoRejoinTool()
-
+	currentVersion, _ := vrc.GetCurrentVersion()
+	latestVersion, _ := vrc.GetLatestVersion()
+	if currentVersion != nil && latestVersion != nil {
+		if currentVersion.Major != latestVersion.Major {
+			log.Println("auto rejoin tool が更新されました。最新バージョンを入手してください. ")
+			return
+		}
+	}
 	home := vrc.GetUserHome()
 	lock := vrcarjt.NewDupRunLock(home + `\AppData\Local\Temp\` + lockfile)
 	ok, err := lock.Try()
