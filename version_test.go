@@ -27,6 +27,34 @@ func Test_getVersion(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "Should return a valid Version for v2.7.1",
+			args: args{
+				"v2.7.1",
+			},
+			want: &Version{
+				Major: 2,
+				Minor: 7,
+				Patch: 1,
+			},
+			wantErr: false,
+		},
+		{
+			name: "Should fail for an invalid version type for 2.7.1",
+			args: args{
+				"2.7.1",
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "Should fail for an empty string",
+			args: args{
+				"",
+			},
+			want:    nil,
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -40,4 +68,15 @@ func Test_getVersion(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestVRCAutoRejoinTool_GetCurrentVersion(t *testing.T) {
+
+	t.Run("Should return a valid version", func(t *testing.T) {
+		v := NewVRCAutoRejoinTool()
+		_, err := v.GetCurrentVersion()
+		if err != nil {
+			t.Errorf("VRCAutoRejoinTool.GetCurrentVersion() error = %v", err)
+		}
+	})
 }
