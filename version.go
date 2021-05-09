@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -12,8 +11,6 @@ import (
 	"strings"
 	"time"
 )
-
-const BuildVersion = "v2.7.0"
 
 type Version struct {
 	Major int
@@ -27,10 +24,10 @@ func getVersion(version string) (*Version, error) {
 	}
 	nums := strings.Split(version, "")
 	if len(nums) != 6 {
-		return nil, errors.New(fmt.Sprintf("Please follow the proper versioning format, Got: %v, Expected: v0.0.0", version))
+		return nil, fmt.Errorf("Please follow the proper versioning format, Got: %v, Expected: v0.0.0", version)
 	}
 	if nums[0] != "v" {
-		return nil, errors.New(fmt.Sprintf("Please follow the proper versioning format, Got: %v, Expected: v0.0.0", version))
+		return nil, fmt.Errorf("Please follow the proper versioning format, Got: %v, Expected: v0.0.0", version)
 	}
 	major, err := strconv.Atoi(nums[1])
 	if err != nil {
@@ -131,13 +128,12 @@ func (v *VRCAutoRejoinTool) GetLatestVersion() (*Version, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	ioutil.ReadAll(resp.Body)
-	body, err := io.ReadAll(resp.Body)
+
+	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	log.Println(string(body))
 	var latestVersion LatestVersion
 	err = json.Unmarshal(body, &latestVersion)
 	if err != nil {
