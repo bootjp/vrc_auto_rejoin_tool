@@ -168,7 +168,7 @@ func main() {
 	if currentVersion != nil && latestVersion != nil {
 		if currentVersion.Major != latestVersion.Major {
 			log.Println("auto rejoin tool が更新されました。最新バージョンを入手してください. ")
-			return
+			select {}
 		}
 	}
 	home := vrc.GetUserHome()
