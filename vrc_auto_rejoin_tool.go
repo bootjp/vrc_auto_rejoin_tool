@@ -4,8 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jinzhu/now"
-
 	"os/exec"
 	"runtime"
 
@@ -13,6 +11,7 @@ import (
 	"github.com/faiface/beep/speaker"
 	"github.com/faiface/beep/wav"
 	"github.com/hpcloud/tail"
+	"github.com/jinzhu/now"
 	gops "github.com/mitchellh/go-ps"
 	"github.com/shirou/gopsutil/process"
 
@@ -30,7 +29,8 @@ const Location = "Local"
 const TimeFormat = "2006.01.02 15:04:05"
 const vrcRelativeLogPath = `\AppData\LocalLow\VRChat\VRChat\`
 const Timeout = "Timeout: Your connection to VRChat timed out."
-const BuildVersion = "v2.7.0"
+
+var BuildVersion = ""
 
 func NewVRCAutoRejoinTool() *VRCAutoRejoinTool {
 	conf := LoadConf("setting.yml")

@@ -2,53 +2,49 @@ name: Go
 on:
   push:
     tags:
-      - 'v*.*.*'
-
+      - "v*.*.*"
 
 jobs:
-
   build:
     name: Build
     runs-on: windows-latest
     steps:
+      - name: Set up Go 1.15
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.15
+        id: go
 
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v1
 
-    - name: Set up Go 1.15
-      uses: actions/setup-go@v1
-      with:
-        go-version: 1.15
-      id: go
+      - name: Get dependencies
+        env:
+          GO111MODULE: on
+        run: |
+          go get -v -t -d ./...
 
-    - name: Check out code into the Go module directory
-      uses: actions/checkout@v1
+      - name: Test
+        run: go test -v ./...
 
-    - name: Get dependencies
-      env: 
-        GO111MODULE: on
-      run: |
-        go get -v -t -d ./...
+      - name: Generate binary icon
+        run: windres --output-format=coff -o cli/logoico.syso cli/logoico.rs
 
-    - name: Test
-      run: go test -v ./...
+      - name: Build as binary
+        env:
+          GOOS: windows
+          GOARCH: amd64
+        run: |
+          go build -ldflags "-X vrc_auto_rejoin_tool.BuildVersion=$(git describe --tags --abbrev=0)" -o ./dist/vrc_auto_rejoin_tool_x64.exe ./cli/
 
-    - name: Generate binary icon
-      run: windres --output-format=coff -o cli/logoico.syso cli/logoico.rs
+      - name: Achive to zip
+        run: |
+          powershell compress-archive -Path dist/* -DestinationPath dist/vrc_auto_rejoin_tool_x64.zip
 
-    - name: Build as binary
-      env:
-        GOOS: windows
-        GOARCH: amd64
-      run: |
-        go build -ldflags "-X main.version=$(git describe --tags --abbrev=0)" -o ./dist/vrc_auto_rejoin_tool_x64.exe ./cli/
-
-    - name: Achive to zip
-      run: |
-        powershell compress-archive -Path dist/* -DestinationPath dist/vrc_auto_rejoin_tool_x64.zip
-
-    - name: Release
-      uses: softprops/action-gh-release@v1
-      with:
-        files: "dist/vrc_auto_rejoin_tool_x64.zip"
-        prerelease: ${{ contains(github.ref, '-beta') }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: "dist/vrc_auto_rejoin_tool_x64.zip"
+          prerelease: ${{ contains(github.ref, '-beta') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

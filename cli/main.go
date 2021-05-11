@@ -17,8 +17,6 @@ import (
 
 var logo = canvas.NewImageFromFile("./logo.png")
 
-var version = "None"
-
 func parseURL(urlStr string) *url.URL {
 	link, err := url.Parse(urlStr)
 	if err != nil {
@@ -100,7 +98,7 @@ func welcomeScreen(a fyne.App, v vrcarjt.AutoRejoin, w fyne.Window) fyne.CanvasO
 		widget.NewHBox(layout.NewSpacer(), logo, layout.NewSpacer()),
 		statusContainer,
 		fyne.NewContainerWithLayout(layout.NewCenterLayout(),
-			widget.NewTextGridFromString("version: "+version),
+			widget.NewTextGridFromString("version: "+vrcarjt.BuildVersion),
 		),
 
 		widget.NewGroup("Controls",
