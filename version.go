@@ -38,12 +38,10 @@ func getVersion(version string) (*Version, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	patch, err := strconv.Atoi(nums[5])
 	if err != nil {
 		return nil, err
 	}
-
 	return &Version{
 		Major: major,
 		Minor: minor,
