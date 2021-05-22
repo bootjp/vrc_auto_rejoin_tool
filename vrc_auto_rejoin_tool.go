@@ -29,8 +29,7 @@ const Location = "Local"
 const TimeFormat = "2006.01.02 15:04:05"
 const vrcRelativeLogPath = `\AppData\LocalLow\VRChat\VRChat\`
 const Timeout = "Timeout: Your connection to VRChat timed out."
-
-var BuildVersion = "v0.0.0"
+var BuildVersion = "The version is embedded at build time."
 
 func NewVRCAutoRejoinTool() *VRCAutoRejoinTool {
 	conf := LoadConf("setting.yml")
