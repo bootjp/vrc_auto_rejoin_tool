@@ -16,6 +16,7 @@ type Version struct {
 	Major int
 	Minor int
 	Patch int
+	Beta  bool
 }
 
 func getVersion(version string) (*Version, error) {
@@ -23,7 +24,7 @@ func getVersion(version string) (*Version, error) {
 		return nil, errors.New("Please provide a valid version to parse")
 	}
 	nums := strings.Split(version, "")
-	if len(nums) != 6 {
+	if len(nums) != 6 && len(nums) != 11 {
 		return nil, fmt.Errorf("Please follow the proper versioning format, Got: %v, Expected: v0.0.0", version)
 	}
 	if nums[0] != "v" {
@@ -37,14 +38,17 @@ func getVersion(version string) (*Version, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	patch, err := strconv.Atoi(nums[5])
 	if err != nil {
 		return nil, err
 	}
+
 	return &Version{
 		Major: major,
 		Minor: minor,
 		Patch: patch,
+		Beta:  strings.HasSuffix(version, "-beta"),
 	}, nil
 }
 

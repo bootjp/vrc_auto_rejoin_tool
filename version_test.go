@@ -55,6 +55,19 @@ func Test_getVersion(t *testing.T) {
 			want:    nil,
 			wantErr: true,
 		},
+		{
+			name: "Should return a valid version type for 2.7.1-beta",
+			args: args{
+				"v2.7.1-beta",
+			},
+			want: &Version{
+				Major: 2,
+				Minor: 7,
+				Patch: 1,
+				Beta:  true,
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
