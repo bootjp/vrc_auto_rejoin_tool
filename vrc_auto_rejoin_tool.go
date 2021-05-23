@@ -200,24 +200,8 @@ func (v *VRCAutoRejoinTool) rejoin(i Instance, killProcess bool) error {
 		}
 	}
 
-	// 既存の起動引数を用いて rejoin するインスタンスを指定する
-	// TODO 既存の引数にインスタンス指定があれば取り除く
-	args := v.Args + ` vrchat://launch?id=`+i.ID
-
-	// 今動いている VRChat.exe までのパスを取得する
-	// go の windows の exec は exe までのパスと引数を完全に別物として扱うため
-	arg := strings.Split(args, `VRChat.exe`)
-	exe := arg[:1][0] + `VRChat.exe`
-
-	// 既存の VRChat.exe のパスは "" で囲まれているため除去する
-	// 末尾の " は exe の組立時に VRChat.exe で追加しているため除去不要
-	if strings.HasPrefix(exe , `"`) {
-		exe = exe[1:]
-	}
-
-	// もとの起動引数と rejoin で付与した引数を配列にする
-	exeArgs := strings.Fields(arg[1:][0])
-	cmd := exec.Command(exe, exeArgs...)
+	args := prepareExecArgs(v.Args, i)
+	cmd := exec.Command(args.ExePath, args.Args...)
 
 	return cmd.Start()
 }
@@ -479,4 +463,40 @@ func (v *VRCAutoRejoinTool) isMove(at time.Time, l string) bool {
 
 func (v *VRCAutoRejoinTool) isTimeout(log string) bool {
 	return strings.Contains(log, Timeout)
+}
+
+type Exec struct {
+	ExePath string
+	Args    []string
+}
+
+func prepareExecArgs(processArgs string, i Instance) Exec {
+	// 既存の起動引数を用いて rejoin するインスタンスを指定する
+	// TODO 既存の引数にインスタンス指定があれば取り除く
+	args := processArgs + ` vrchat://launch?id=` + i.ID
+
+	// 今動いている VRChat.exe までのパスを取得する
+	// go の windows の exec は exe までのパスと引数を完全に別物として扱うため
+	arg := strings.Split(args, `VRChat.exe`)
+	exe := arg[:1][0] + `VRChat.exe`
+
+	// C:\Program Files (x86) などのスペースを含む階層以下にある場合のVRChat.exe のパスは "" で囲まれているため除去する
+	// 末尾の " は exe の組立時に VRChat.exe で追加しているため除去不要
+	if strings.HasPrefix(exe, `"`) {
+		exe = exe[1:]
+	}
+
+	tmpArgs := arg[1:][0]
+
+	// C:\Program Files (x86) 以下の階層にある場合はexeのパスの " がのこるので除去する
+	if strings.HasPrefix(tmpArgs, `"`) {
+		tmpArgs = tmpArgs[1:]
+	}
+
+	exeArgs := strings.Fields(strings.TrimSpace(tmpArgs))
+
+	return Exec{
+		ExePath: exe,
+		Args:    exeArgs,
+	}
 }
