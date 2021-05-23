@@ -199,10 +199,25 @@ func (v *VRCAutoRejoinTool) rejoin(i Instance, killProcess bool) error {
 			log.Println(err)
 		}
 	}
-	params := strings.Split(v.Args, `VRChat.exe" `)
-	exe := strings.Join(params[:1], "") + `VRChat.exe`
-	exe = strings.Trim(exe, `"`)
-	cmd := exec.Command(exe, strings.Split(strings.Join(params[1:], "")+` `+`vrchat://launch?id=`+i.ID, ` `)...)
+
+	// 既存の起動引数を用いて rejoin するインスタンスを指定する
+	// TODO 既存の引数にインスタンス指定があれば取り除く
+	args := v.Args + ` vrchat://launch?id=`+i.ID
+
+	// 今動いている VRChat.exe までのパスを取得する
+	// go の windows の exec は exe までのパスと引数を完全に別物として扱うため
+	arg := strings.Split(args, `VRChat.exe`)
+	exe := arg[:1][0] + `VRChat.exe`
+
+	// 既存の VRChat.exe のパスは "" で囲まれているため除去する
+	// 末尾の " は exe の組立時に VRChat.exe で追加しているため除去不要
+	if strings.HasPrefix(exe , `"`) {
+		exe = exe[1:]
+	}
+
+	// もとの起動引数と rejoin で付与した引数を配列にする
+	exeArgs := strings.Fields(arg[1:][0])
+	cmd := exec.Command(exe, exeArgs...)
 
 	return cmd.Start()
 }
