@@ -164,7 +164,7 @@ func main() {
 	currentVersion, _ := vrc.GetCurrentVersion()
 	latestVersion, _ := vrc.GetLatestVersion()
 	if currentVersion != nil && latestVersion != nil {
-		if currentVersion.Major != latestVersion.Major {
+		if !currentVersion.Beta && currentVersion.Major != latestVersion.Major {
 			log.Println("auto rejoin tool が更新されました。最新バージョンを入手してください. ")
 			select {}
 		}
