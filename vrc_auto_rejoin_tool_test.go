@@ -369,3 +369,46 @@ func TestTime(t *testing.T) {
 		}
 	}
 }
+
+func TestPrepareExecArgs(t *testing.T) {
+	tests := []struct {
+		Name        string
+		ProcessArgs string
+		Instance    Instance
+		Expect      Exec
+	}{
+		{
+			"Has path with space",
+			`"C:\Program Files (x86)\Steam\steamapps\common\VRChat\VRChat.exe" --no-vr --enable-sdk-log-levels`,
+			Instance{
+				ID: `wrld_bd543f66-8bf1-4ddb-bfc0-5a088d486e0c:45704~private(usr_d97adcdc-718b-4361-9b75-2c97c0a4993d)~canRequestInvite~nonce(7054E2EE676461569FC98F015A1461D3B55A54AF947FD16CD27B43880482CA26)`,
+			},
+			Exec{
+				ExePath: `C:\Program Files (x86)\Steam\steamapps\common\VRChat\VRChat.exe`,
+				Args:    []string{"--no-vr", "--enable-sdk-log-levels", "vrchat://launch?id=wrld_bd543f66-8bf1-4ddb-bfc0-5a088d486e0c:45704~private(usr_d97adcdc-718b-4361-9b75-2c97c0a4993d)~canRequestInvite~nonce(7054E2EE676461569FC98F015A1461D3B55A54AF947FD16CD27B43880482CA26)"},
+			},
+		},
+
+		{
+			"Hasn't path with space",
+			`S:\SteamLibrary\steamapps\common\VRChat\VRChat.exe --no-vr --enable-sdk-log-levels`,
+			Instance{
+				ID: `wrld_bd543f66-8bf1-4ddb-bfc0-5a088d486e0c:45704~private(usr_d97adcdc-718b-4361-9b75-2c97c0a4993d)~canRequestInvite~nonce(7054E2EE676461569FC98F015A1461D3B55A54AF947FD16CD27B43880482CA26)`,
+			},
+			Exec{
+				ExePath: `S:\SteamLibrary\steamapps\common\VRChat\VRChat.exe`,
+				Args:    []string{"--no-vr", "--enable-sdk-log-levels", "vrchat://launch?id=wrld_bd543f66-8bf1-4ddb-bfc0-5a088d486e0c:45704~private(usr_d97adcdc-718b-4361-9b75-2c97c0a4993d)~canRequestInvite~nonce(7054E2EE676461569FC98F015A1461D3B55A54AF947FD16CD27B43880482CA26)"},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		res := prepareExecArgs(test.ProcessArgs, test.Instance)
+		if !reflect.DeepEqual(res, test.Expect) {
+			t.Log(t.Name(), "failed")
+			t.Errorf("doesnt match \nexpect %q \ngot %q", test.Expect, res)
+		}
+
+	}
+
+}

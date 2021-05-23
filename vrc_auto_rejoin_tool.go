@@ -4,8 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jinzhu/now"
-
 	"os/exec"
 	"runtime"
 
@@ -13,6 +11,7 @@ import (
 	"github.com/faiface/beep/speaker"
 	"github.com/faiface/beep/wav"
 	"github.com/hpcloud/tail"
+	"github.com/jinzhu/now"
 	gops "github.com/mitchellh/go-ps"
 	"github.com/shirou/gopsutil/process"
 
@@ -30,7 +29,8 @@ const Location = "Local"
 const TimeFormat = "2006.01.02 15:04:05"
 const vrcRelativeLogPath = `\AppData\LocalLow\VRChat\VRChat\`
 const Timeout = "Timeout: Your connection to VRChat timed out."
-const BuildVersion = "v2.7.0"
+
+var BuildVersion = "v0.0.0"
 
 func NewVRCAutoRejoinTool() *VRCAutoRejoinTool {
 	conf := LoadConf("setting.yml")
@@ -199,10 +199,9 @@ func (v *VRCAutoRejoinTool) rejoin(i Instance, killProcess bool) error {
 			log.Println(err)
 		}
 	}
-	params := strings.Split(v.Args, `VRChat.exe" `)
-	exe := strings.Join(params[:1], "") + `VRChat.exe`
-	exe = strings.Trim(exe, `"`)
-	cmd := exec.Command(exe, strings.Split(strings.Join(params[1:], "")+` `+`vrchat://launch?id=`+i.ID, ` `)...)
+
+	args := prepareExecArgs(v.Args, i)
+	cmd := exec.Command(args.ExePath, args.Args...)
 
 	return cmd.Start()
 }
@@ -464,4 +463,40 @@ func (v *VRCAutoRejoinTool) isMove(at time.Time, l string) bool {
 
 func (v *VRCAutoRejoinTool) isTimeout(log string) bool {
 	return strings.Contains(log, Timeout)
+}
+
+type Exec struct {
+	ExePath string
+	Args    []string
+}
+
+func prepareExecArgs(processArgs string, i Instance) Exec {
+	// 既存の起動引数を用いて rejoin するインスタンスを指定する
+	// TODO 既存の引数にインスタンス指定があれば取り除く
+	args := processArgs + ` vrchat://launch?id=` + i.ID
+
+	// 今動いている VRChat.exe までのパスを取得する
+	// go の windows の exec は exe までのパスと引数を完全に別物として扱うため
+	arg := strings.Split(args, `VRChat.exe`)
+	exe := arg[:1][0] + `VRChat.exe`
+
+	// C:\Program Files (x86) などのスペースを含む階層以下にある場合のVRChat.exe のパスは "" で囲まれているため除去する
+	// 末尾の " は exe の組立時に VRChat.exe で追加しているため除去不要
+	if strings.HasPrefix(exe, `"`) {
+		exe = exe[1:]
+	}
+
+	tmpArgs := arg[1:][0]
+
+	// C:\Program Files (x86) 以下の階層にある場合はexeのパスの " がのこるので除去する
+	if strings.HasPrefix(tmpArgs, `"`) {
+		tmpArgs = tmpArgs[1:]
+	}
+
+	exeArgs := strings.Fields(strings.TrimSpace(tmpArgs))
+
+	return Exec{
+		ExePath: exe,
+		Args:    exeArgs,
+	}
 }
