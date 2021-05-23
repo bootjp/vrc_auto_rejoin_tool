@@ -3,6 +3,7 @@ package vrcarjt
 import (
 	"errors"
 	"fmt"
+	"regexp"
 
 	"os/exec"
 	"runtime"
@@ -470,9 +471,15 @@ type Exec struct {
 	Args    []string
 }
 
+var instancePattern = regexp.MustCompile(`vrchat://.+`)
+
 func prepareExecArgs(processArgs string, i Instance) Exec {
+	// 起動時に vrchat:// のインスタンス指定があった場合は競合するため消す
+	if strings.Contains(processArgs, "vrchat://") {
+		processArgs = instancePattern.ReplaceAllString(processArgs, "")
+	}
+
 	// 既存の起動引数を用いて rejoin するインスタンスを指定する
-	// TODO 既存の引数にインスタンス指定があれば取り除く
 	args := processArgs + ` vrchat://launch?id=` + i.ID
 
 	// 今動いている VRChat.exe までのパスを取得する

@@ -400,6 +400,18 @@ func TestPrepareExecArgs(t *testing.T) {
 				Args:    []string{"--no-vr", "--enable-sdk-log-levels", "vrchat://launch?id=wrld_bd543f66-8bf1-4ddb-bfc0-5a088d486e0c:45704~private(usr_d97adcdc-718b-4361-9b75-2c97c0a4993d)~canRequestInvite~nonce(7054E2EE676461569FC98F015A1461D3B55A54AF947FD16CD27B43880482CA26)"},
 			},
 		},
+
+		{
+			"Hasn't path with space and provide instance",
+			`S:\SteamLibrary\steamapps\common\VRChat\VRChat.exe --no-vr --enable-sdk-log-levels vrchat://launch?id=wrld_bd543f66-8bf1-4ddb-bfc0-5a088d486e0c:45704~private(usr_d97adcdc-718b-4361-9b75-2c97c0a4993d)~canRequestInvite~nonce(7054E2EE676461569FC98F015A1461D3B55A54AF947FD16CD27B43880482CA26)"`,
+			Instance{
+				ID: `wrld_d95af561-c0d2-4000-b269-7e1913aec432:10484~private(usr_d97adcdc-718b-4361-9b75-2c97c0a4993d)~nonce(DCB2E2BB993B9AA1728DD0EC66803F1F575C00940BB2EFF3E2EAAC115B33DF49)`,
+			},
+			Exec{
+				ExePath: `S:\SteamLibrary\steamapps\common\VRChat\VRChat.exe`,
+				Args:    []string{"--no-vr", "--enable-sdk-log-levels", "vrchat://launch?id=wrld_d95af561-c0d2-4000-b269-7e1913aec432:10484~private(usr_d97adcdc-718b-4361-9b75-2c97c0a4993d)~nonce(DCB2E2BB993B9AA1728DD0EC66803F1F575C00940BB2EFF3E2EAAC115B33DF49)"},
+			},
+		},
 	}
 
 	for _, test := range tests {
